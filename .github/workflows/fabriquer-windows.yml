@@ -70,6 +70,8 @@ jobs:
 
       - name: Compilation PyInstaller
         shell: pwsh
+        env:
+          APP: ${{ steps.html.outputs.APP }}
         run: |
           python -m PyInstaller --clean --noconfirm --name OmniTradeBridge --console --noupx `
             --icon "OmniTradeHub.ico" `
@@ -99,6 +101,8 @@ jobs:
 
       - name: Normalisation du HTML (_internal\omnitrade-v21.html)
         shell: pwsh
+        env:
+          APP: ${{ steps.html.outputs.APP }}
         run: |
           $int = "dist\OmniTradeBridge\_internal"
           if (-not (Test-Path $int)) { $int = "dist\OmniTradeBridge" }
@@ -106,6 +110,8 @@ jobs:
 
       - name: Assemblage du paquet
         shell: pwsh
+        env:
+          APP: ${{ steps.html.outputs.APP }}
         run: |
           New-Item -ItemType Directory -Force "OmniTradeHub-Windows-PRET" | Out-Null
           Copy-Item -Recurse "dist\OmniTradeBridge" "OmniTradeHub-Windows-PRET\bin"
