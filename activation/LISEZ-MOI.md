@@ -105,9 +105,46 @@ Envoie le code au client. Dans l'app, il colle le code → l'app appelle
   c'est la même clé, mais produite par le serveur à la volée — et c'est
   l'app qui fait le copier-coller.
 
-## ÉTAPE 7 (à venir) — Le paiement
+## ÉTAPE 7 — Le paiement automatisé (FLUTTERWAVE)
 
-`oth-issue` accepte déjà `create` pour un futur `stripe-event` : quand Stripe
-confirmera le paiement, il pourra créer le code automatiquement. Cette étape
-sera faite au moment de brancher le paiement (choix : Stripe / Flutterwave CV
-selon la région).
+Le tunnel existe et est DÉPLOYÉ, mais il reste « fermé à clé » tant que les
+secrets Flutterwave ne sont pas posés : `oth-purchase` refuse les commandes
+(« paiement en cours de mise en place »), aucun code ne peut être créé.
+
+**Fonctions** (déjà déployées, `--no-verify-jwt`) :
+- `oth-purchase` : la page de vente appelle cette fonction avec
+  `{ plan, email }` → elle crée la transaction Flutterwave (Standard checkout)
+  et renvoie le lien de paiement.
+- `oth-payment-hook` : reçoit le **webhook** Flutterwave (POST, signature
+  `verif-hash`) ET sert la **page de retour** (GET) où le code s'affiche
+  automatiquement après paiement. Le paiement est toujours re-vérifié sur
+  l'API Flutterwave avant d'émettre le code, avec contrôle du montant.
+
+**Pour activer (5 min)** :
+1. Compte marchand sur https://dashboard.flutterwave.com (Côte d'Ivoire :
+   carte, Orange Money, Wave, MTN, Moov).
+2. Dashboard → **Settings → API Keys** → copie la **Secret Key**.
+3. Dashboard → **Settings → Webhooks** → adresse :
+   `https://qxrkdnkxpnmmxigjtrcb.supabase.co/functions/v1/oth-payment-hook`
+   puis définis un **Secret Hash** (le « verif-hash ») et note-le.
+4. Tests → **Settings → API Keys** → active le **mode test** (CLÉ test)
+   pendant tes essais (cartd test `4189 4100 4135 4605`).
+5. Pose les secrets :
+   ```
+   supabase secrets set FLW_SECRET_KEY=FLWSECK-…   (ou test si mode test)
+   supabase secrets set FLW_VERIF_HASH=…mot-de-passe-du-webhook…
+   ```
+6. Publie la page de vente : le fichier `vente/index.html` (dossier `vente/`)
+   est prêt → dépose-le sur GitHub Pages (ou tout hébergeur statique). Il
+   pointe déjà vers ton projet Supabase. Les prix sont dans
+   `supabase/functions/_shared/pricing.ts` (FCFA).
+
+**Garde-fous intégrés** : montant re-vérifié vs `pricing.ts`, idempotence par
+référence `tx_ref` (jamais deux codes pour un paiement), page RLS
+(`paiements` inaccessible au navigateur).
+
+## ÉTAPE 8 (au choix) — Abonnement récurrent (auto-renouvellement)
+
+Non encore branché (paiement unique pour l'instant) : une nouvelle commande du
+client = un nouveau paiement + un nouveau code. L'auto-renouvellement
+(subscriptions Flutterwave) pourra s'ajouter plus tard.

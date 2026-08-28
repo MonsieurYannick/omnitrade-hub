@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OmniTrade Hub — Acheter une licence</title>
+<meta name="description" content="Achetez votre licence OmniTrade Hub en ligne : paiement sécurisé (carte, Orange Money, Wave, MTN), code reçu automatiquement.">
+<style>
+  :root{
+    --bg:#0b1220; --card:#111a2e; --line:#26334d; --txt:#e2e8f0; --mut:#aab6cf;
+    --acc:#2563eb; --acc2:#4f46e5; --ok:#4ade80; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 20% -10%, #14224a 0%, var(--bg) 55%);
+    color:var(--txt);min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:34px 20px 60px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  header b{font-size:20px;letter-spacing:.5px}
+  header b span{color:var(--acc)}
+  .sub{color:var(--mut);font-size:14px}
+  h1{font-size:26px;margin:4px 0 6px}
+  .lead{color:var(--mut);max-width:640px;line-height:1.6;font-size:15px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:26px 0 8px}
+  .plan{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;cursor:pointer;
+    transition:transform .12s,border-color .12s,box-shadow .12s;position:relative}
+  .plan:hover{transform:translateY(-2px);border-color:#3b4d73}
+  .plan.sel{border-color:var(--acc);box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+  .plan .name{font-weight:800;font-size:16px}
+  .plan .desc{color:var(--mut);font-size:12.5px;margin:4px 0 10px;min-height:34px}
+  .plan .prix{font-size:21px;font-weight:900;color:#fff}
+  .plan .prix small{font-size:12px;color:var(--mut);font-weight:400}
+  .plan .pop{position:absolute;top:-9px;right:12px;background:var(--acc2);color:#fff;font-size:10.5px;
+    font-weight:800;padding:3px 8px;border-radius:999px}
+  form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px}
+  label{display:block;font-size:13.5px;font-weight:700;margin:0 0 6px}
+  input{width:100%;background:#0f172a;border:1px solid #334155;border-radius:9px;color:#fff;
+    padding:12px 14px;font-size:15px;outline:none}
+  input:focus{border-color:var(--acc)}
+  .row{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+  button{width:100%;margin-top:16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;
+    border:0;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer}
+  button:disabled{opacity:.55;cursor:wait}
+  .msg{margin-top:12px;font-size:13.5px;line-height:1.5;min-height:20px}
+  .msg.ok{color:var(--ok)} .msg.err{color:var(--warn)}
+  .note{color:var(--mut);font-size:12.5px;margin-top:10px;text-align:center}
+  footer{margin-top:36px;color:var(--mut);font-size:12.5px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="https://raw.githubusercontent.com/MonsieurYannick/omnitrade-hub/main/favicon-48.png" alt="" width="40" height="40">
+    <div>
+      <b>OmniTrade <span>Hub</span></b>
+      <div class="sub">Journal de trading · MT5 Sync · Agents IA · Market Hub</div>
+    </div>
+  </header>
+
+  <h1>Acheter / renouveler votre licence</h1>
+  <p class="lead">
+    Choisissez votre formule. Le paiement est sécurisé par
+    <b>Flutterwave</b> : carte bancaire, Orange Money, Wave, MTN ou Moov.
+    Votre <b>code d'achat</b> s'affiche automatiquement juste après le paiement
+    — vous collez ce code dans l'application (page <b>Licence</b>) et tout se
+    déverrouille, sans nous contacter.
+  </p>
+
+  <div class="grid" id="plans"></div>
+
+  <form onsubmit="payer(event)">
+    <div class="row">
+      <div>
+        <label for="email">Votre e-mail (pour recevoir le code)</label>
+        <input id="email" type="email" required placeholder="vous@exemple.com" autocomplete="email">
+      </div>
+      <div>
+        <label for="prenom">Votre prénom</label>
+        <input id="prenom" type="text" placeholder="Ex : Yannick">
+      </div>
+    </div>
+    <button id="btn" type="submit">🔒 Payer maintenant</button>
+    <div class="msg" id="msg"></div>
+  </form>
+  <p class="note">Un code fonctionne sur 2 ordinateurs maximum. Données traitées uniquement pour la commande.</p>
+
+  <footer>
+    OMNITRADE — Une question ? Contactez le vendeur<br>
+    <a href="https://github.com/MonsieurYannick/omnitrade-hub/releases" style="color:var(--acc)">Page des téléchargements</a>
+  </footer>
+</div>
+
+<script>
+// ── CONFIG — valeurs PUBLIQUES du projet Supabase (voir activation/README) ──
+// Vous pouvez lire ces valeurs dans votre tableau de bord Supabase →
+// « Project Settings → API ».
+const SUPABASE_URL = 'https://qxrkdnkxpnmmxigjtrcb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_BmL9G34dZTh0p1TU8LGjgQ_-1N3bHI1';
+
+const PLANS = [
+  { id:'m3',   name:'3 mois',      desc:'Idéal pour tester en conditions réelles',  prix:25000 },
+  { id:'m6',   name:'6 mois',      desc:'Mi-saison — le meilleur équilibre',         prix:40000, pop:'Populaire' },
+  { id:'m12',  name:'12 mois',     desc:'Une année complète de trading assisté',     prix:65000, pop:'-29%' },
+  { id:'life', name:'À vie',       desc:'Paiement unique, tout est inclus',          prix:150000 },
+];
+</script>
+<script>
+let choisi = 'm12';
+function fmt(n){return Number(n).toLocaleString('fr-FR');}
+(function renderPlans(){
+  const grid = document.getElementById('plans');
+  grid.innerHTML = PLANS.map(p => `
+    <div class="plan ${choisi===p.id?'sel':''}" id="pl-${p.id}" onclick="sel('${p.id}')">
+      ${p.pop?'<span class="pop">'+p.pop+'</span>':''}
+      <div class="name">${p.name}</div>
+      <div class="desc">${p.desc}</div>
+      <div class="prix">${fmt(p.prix)} <small>FCFA</small></div>
+    </div>`).join('');
+})();
+function sel(id){choisi=id;renderPlans();}
+async function payer(ev){
+  ev.preventDefault();
+  const btn=document.getElementById('btn');
+  const msg=document.getElementById('msg');
+  const email=document.getElementById('email').value.trim();
+  const prenom=document.getElementById('prenom').value.trim();
+  msg.className='msg'; msg.textContent='Connexion au paiement sécurisé…';
+  btn.disabled=true;
+  try{
+    const r=await fetch(SUPABASE_URL+'/functions/v1/oth-purchase',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON_KEY,'apikey':SUPABASE_ANON_KEY},
+      body:JSON.stringify({plan:choisi,email,prenom})
+    });
+    const j=await r.json().catch(()=>null);
+    if(r.ok&&j&&j.link){
+      msg.textContent='Redirection vers la page de paiement…';
+      window.location.href=j.link;
+      return;
+    }
+    msg.className='msg err';
+    msg.textContent=(j&&j.msg_fr)||'Impossible de démarrer le paiement. Réessayez ou contactez le vendeur.';
+  }catch(e){
+    msg.className='msg err';
+    msg.textContent='Erreur de connexion. Vérifiez Internet puis réessayez.';
+  }
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>
