@@ -13,8 +13,13 @@ function img(name, caption, css = '') {
   const p = path.join(CAP, name)
   if (!fs.existsSync(p)) return `<p style="color:#e85d5d">[image manquante : ${name}]</p>`
   const data = fs.readFileSync(p).toString('base64')
+  /* Toutes les captures sont pleine page (très hautes). On force une hauteur
+     max pour ne jamais déborder la page A4, et un centrage. Le `css` optionnel
+     (ex. max-height plus grand) écrase cette valeur par défaut. */
+  const style = `max-height:14cm;width:auto;max-width:100%;margin:0 auto;display:block;`
+    + `border-radius:10px;border:1px solid #26334d;${css}`
   return (
-    `<figure><img src="data:image/png;base64,${data}" alt="${caption}" style="width:100%;border-radius:10px;border:1px solid #26334d;${css}">`
+    `<figure><img src="data:image/png;base64,${data}" alt="${caption}" style="${style}">`
     + `<figcaption>${caption}</figcaption></figure>`
   )
 }
@@ -90,23 +95,29 @@ const G1 = page(band(1, 'Installation sur Mac et Windows', 'prérequis · lancem
     <li>Un <b>Mac</b> (Intel ou Apple Silicon, macOS 12 ou plus récent) ou un PC <b>Windows 10/11</b> (64 bits).</li>
     <li>Une connexion Internet (nécessaire pour les cours, les actualités et les agents IA).</li>
     <li>MetaTrader 5 à part, <i>uniquement</i> si vous voulez la synchronisation automatique de vos trades.</li>
-    <li>Le logiciel se déverrouille <b>automatiquement</b> : aucune clé à saisir à l'installation.</li>
+    <li>Le logiciel démarre en <b>édition gratuite</b> (MT5 30 trades, calendrier, alertes, watchlist).
+      Après achat d'un code, activez-le (page <b>Licence</b>) pour tout débloquer — voir le guide n°4.</li>
   </ul>
 
   <h2>2. Télécharger le programme</h2>
   <p>Tout se passe sur la page de téléchargement unique :</p>
   <div class="qr"><b>https://github.com/MonsieurYannick/omnitrade-hub/releases</b><br>
   <span style="font-size:9.5pt">(onglet « Releases », ouverture automatique du tag le plus récent)</span></div>
-  <p>Choisissez selon votre machine :
+  <p>Choisissez le fichier qui correspond à <b>votre</b> machine :</p>
   <table>
-    <tr><th>Machine</th><th>Fichier à prendre</th></tr>
-    <tr><td>Mac (Intel ou Apple Silicon)</td><td><code>OmniTradeHub-macOS.dmg</code></td></tr>
-    <tr><td>PC Windows</td><td><code>OmniTradeHub-Setup-8.88.exe</code></td></tr>
-  </table></p>
+    <tr><th>Type de Mac</th><th>Le fichier à prendre</th></tr>
+    <tr><td><b>Intel</b> (processeur Intel Core / Xeon)</td><td><code>OmniTradeHub-macOS-Intel.dmg</code></td></tr>
+    <tr><td><b>Apple Silicon</b> (puce M1/M2/M3/M4)</td><td><code>OmniTradeHub-macOS-AppleSilicon.dmg</code></td></tr>
+    <tr><td>PC Windows</td><td><code>OmniTradeHub-Setup-*.exe</code> (le plus récent)</td></tr>
+  </table>
+  <div class="note">Comment connaître son type de Mac ? Menu <b></b> (en haut à gauche)
+  → <b>À propos de ce Mac</b> : « <b>Puce</b> » = Apple Silicon · « <b>Processeur</b> » = Intel.
+  Prendre le mauvais fichier empêche le lancement : l'application vous dira alors lequel télécharger.</div>
 
   <h2>3. Installer sur Mac (2 minutes)</h2>
   <ol>
-    <li>Ouvrez le fichier <code>OmniTradeHub-macOS.dmg</code> (double-clic).</li>
+    <li>Ouvrez le fichier <code>OmniTradeHub-macOS-&lt;Intel|AppleSilicon&gt;.dmg</code> (double-clic)
+      <b>selon votre type de Mac</b> (voir tableau ci-dessus).</li>
     <li>La fenêtre « Omni Trade Hub Bridge » s'ouvre (<b>macOS 12+</b>).</li>
     <li>Glissez l'application <b>OmniTradeHub.app</b> dans le dossier <b>Applications</b>.</li>
     <li>La première ouverture : <b>clic droit sur l'icône → Ouvrir</b>, puis <b>Ouvrir</b> à la confirmation.
@@ -117,7 +128,7 @@ const G1 = page(band(1, 'Installation sur Mac et Windows', 'prérequis · lancem
 
   <h2>4. Installer sur Windows (2 minutes)</h2>
   <ol>
-    <li>Ouvrez <code>OmniTradeHub-Setup-8.88.exe</code> (double-clic).</li>
+    <li>Ouvrez <code>OmniTradeHub-Setup-&lt;version&gt;.exe</code> (double-clic).</li>
     <li>Acceptez l'avertissement éventuel de Windows Defender (⟨ Informations complémentaires → Exécuter quand même ⟩).</li>
     <li>Terminez l'installation avec le bouton « Terminer » (aucun réglage à changer).</li>
     <li>Une icône « OmniTrade Hub » apparaît sur le bureau.</li>

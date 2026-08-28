@@ -37,13 +37,33 @@ async function shot(id, name) {
         if (m) { m.onclick ? m.onclick() : m.click(); return true }
         return false
       }
-      const r = doNav()
-      const p = document.querySelector('#pt')
-      if (p && typeof TITLES !== 'undefined' && TITLES[pid]) p.textContent = TITLES[pid]
-      return r
+    const r = doNav()
+    const p = document.querySelector('#pt')
+    if (p && typeof TITLES !== 'undefined' && TITLES[pid]) p.textContent = TITLES[pid]
+    // Fermer les écrans de premier lancement / bannières qui recouvrent la page.
+    try {
+      const hide = (id) => { const e = document.getElementById(id); if (e) { e.style.display='none'; e.classList.remove('on') } }
+      ;['login-overlay', 'setup-overlay', 'wcm'].forEach(hide)
+      if (typeof closeWelcome === 'function') { try { closeWelcome() } catch (e) { } }
+      const warn = document.getElementById('lic-warn'); if (warn) warn.style.display = 'none'
+      // Bannière de mise à jour (div créé dynamiquement, top:0, z-index 2147483600)
+      document.querySelectorAll('body > div').forEach(e => {
+        if ((e.style.cssText || '').includes('2147483600')) e.remove()
+      })
+    } catch (e) { }
+    return r
     }, id)
     await new Promise((r) => setTimeout(r, 2000))
-    await page.screenshot({ path: path.join(OUT, name), fullPage: true })
+    // Retire toute bannière de mise à jour apparue pendant l'attente.
+    await page.evaluate(() => {
+      document.querySelectorAll('body > div').forEach(e => {
+        if ((e.style.cssText || '').includes('2147483600')) e.remove()
+      })
+    })
+    // Capture de la zone visible seulement : les pages remplies au viewport
+    // (2560x1640 @2x). Une capture "fullPage" donnait des images très hautes
+    // (jusqu'à ~6000 px) qui cassaient la mise en page des guides PDF.
+    await page.screenshot({ path: path.join(OUT, name), fullPage: false })
     console.log('ok', name, 'nav=' + ok)
   } catch (e) {
     console.log('er', id, e.message)
