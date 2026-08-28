@@ -1,0 +1,72 @@
+name: Fabriquer l'installateur macOS
+
+# ── Comment l'utiliser ──────────────────────────────────────────────────────
+#  1. Onglet « Actions » → « Fabriquer l'installateur macOS » → « Run
+#     workflow » (optionnel, pour un essai).
+#  2. Plus simple : pousser le code puis un TAG vX.Y.Z (ex : v8.88).
+#     Le tag déclenche LA Release : le .dmg (et le .zip) y sont déposés
+#     automatiquement, le bandeau « mise à jour » de l'app les annonce.
+#
+#  IMPORTANT : pensez à aligner « const APP={ version: 'X.Y.Z' } » dans
+#  omnitrade-v21.html AVANT de pousser le tag — c'est cette valeur que
+#  compare le bandeau de mise à jour.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (ex : 8.88) — vide : tag vX.Y.Z ou numéro du HTML"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Installateur macOS (.dmg)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      VER: ${{ inputs.version }}
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fabrication du .app + .dmg
+        shell: bash
+        run: bash build-ci-macos.sh
+
+      - name: Artéfacts à télécharger
+        uses: actions/upload-artifact@v4
+        with:
+          name: installateur-macos
+          path: |
+            OmniTradeHub-macOS.dmg
+            OmniTradeHub-macOS-PRET.zip
+          if-no-files-found: error
+
+      - name: Publication sur la Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            OmniTradeHub-macOS.dmg
+            OmniTradeHub-macOS-PRET.zip
+          name: OmniTrade Hub v${{ github.ref_name }}
+          body: |
+            Nouvelle version disponible.
+
+            **macOS** — `OmniTradeHub-macOS.dmg` (glisser l'app sur Applications, puis clic-droit → Ouvrir au premier lancement).
+
+            **Windows** — l'installateur `.exe` est ajouté automatiquement par le workflow « Fabriquer l'installateur Windows » sur le même tag.
+          token: ${{ secrets.GITHUB_TOKEN }}

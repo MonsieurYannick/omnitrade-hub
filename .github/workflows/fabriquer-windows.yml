@@ -23,7 +23,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
@@ -136,7 +136,11 @@ jobs:
           APP: ${{ steps.html.outputs.APP }}
         run: |
           $htmlName = $env:APP
-          $ver = if ("$env:VER" -ne "") { "$env:VER" } else { if ($htmlName -match 'v([0-9]+)') { $matches[1] } else { "1" } }
+          $verTag = if ($env:GITHUB_REF -match '^refs/tags/v(.+)$') { $matches[1] } else { '' }
+          $ver = if ($verTag) { $verTag }
+                 elseif ("$env:VER" -ne "") { "$env:VER" }
+                 elseif ($htmlName -match 'v([0-9]+)') { $matches[1] }
+                 else { "1" }
           $iss = @(
             '[Setup]',
             'AppName=OmniTrade Hub',
@@ -184,3 +188,12 @@ jobs:
             OmniTradeHub-Setup-*.exe
             OmniTradeHub-Windows-PRET.zip
           if-no-files-found: error
+
+      - name: Publication sur la Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            OmniTradeHub-Setup-*.exe
+            OmniTradeHub-Windows-PRET.zip
+          token: ${{ secrets.GITHUB_TOKEN }}       # la Release est créée/remplie au besoin

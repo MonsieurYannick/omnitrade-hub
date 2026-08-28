@@ -4788,7 +4788,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'8.87',          // ← le seul endroit à modifier
+  version:'8.88',          // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -13611,7 +13611,14 @@ function licRender() {
       + '</div>'
     : '<div class="lic-state ko"><span class="lic-dot"></span>'
       + (en ? 'No active licence' : 'Aucune licence active')
-      + ' — ' + licReasonText(LIC.reason) + '</div>';
+      + ' — ' + licReasonText(LIC.reason) + '</div>'
+    // La clé reste parfaitement utilisable même si l'empreinte machine a
+    // changé (mise à jour Windows, réinstallation) : on le rassure d'un mot.
+    + (LIC.valid && LIC.machineAutre
+        ? '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px;">' 
+          + (en ? 'This licence was activated on another computer — it works here too.'
+                : 'Cette licence a été activée sur un autre ordinateur — elle fonctionne aussi ici.') + '</p>'
+        : '');
 
   const mid = LIC.machineId || LIC.machine || '';
   box.innerHTML =
@@ -13660,8 +13667,10 @@ function licRender() {
             ? (en ? 'Identifier of this computer. Only useful if you contact support.'
                   : 'Identifiant de cet ordinateur. Utile uniquement si vous '
                     + 'contactez le support.')
-            : (en ? 'Send this code when ordering: your key will be tied to this computer.'
-                  : 'Communiquez ce code lors de votre commande : votre clé sera liée à cet ordinateur.'))
+            : (en ? 'This code identifies this computer. It is used when activating '
+                + 'your purchase code (limited number of computers).'
+                  : 'Ce code identifie cet ordinateur. Il sert lors de l\u2019activation '
+                + 'de votre code d\u2019achat (nombre d\u2019ordinateurs limité).'))
       + '</p>'
       /* Tant que le moteur n'a pas répondu, on le dit clairement ET on
          indique que la recherche est en cours : « moteur non démarré »
@@ -22634,6 +22643,64 @@ function rCb(){
 try{
   document.addEventListener('visibilitychange', function(){ CB.vis=!document.hidden; });
 }catch(e){}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MISE À JOUR AUTOMATIQUE (v8.88+)
+   -----------------------------------------------------------------------
+   Interroge la dernière Release du dépôt GitHub PUBLIC : si une version
+   plus récente que la vôtre existe, un bandeau propose le téléchargement.
+   Lecture publique et silencieuse : en cas d'absence de connexion ou
+   d'erreur, rien ne s'affiche et rien n'est envoyé.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function othUpdate(){
+  const config={
+    repo:'MonsieurYannick/omnitrade-hub',   // ← dépôt public des installateurs
+    dismissKey:'oth_upd_dismiss'
+  };
+  function desc(v){
+    return String(v).split('.').reduce(function(acc,n){return acc*1000+(+n||0);},0);
+  }
+  function deferred(t){return new Promise(function(res){setTimeout(res,t);});}
+  async function run(){
+    try{
+      const sd=parseInt(localStorage.getItem(config.dismissKey)||'0',10);
+      if(Date.now()-sd < 6*3600*1000) return;               // silencieux 6 h après fermeture
+      const r=await fetch('https://api.github.com/repos/'+config.repo+'/releases/latest',
+        {headers:{Accept:'application/vnd.github.v3+json'}});
+      if(!r.ok) return;
+      const rel=await r.json().catch(()=>null);
+      if(!rel||!rel.tag_name) return;
+      const vu=String(rel.tag_name).replace(/^v/,'').trim();
+      const vl=String((typeof APP!=='undefined'&&APP.version)?APP.version:'').trim();
+      if(!vu||!vl||vu===vl||desc(vu)<=desc(vl)) return;
+      await deferred(2500);                                  // laisse l'UI se poser
+      const bar=document.createElement('div');
+      bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483600;'
+        +'display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;'
+        +'padding:9px 16px;font-size:13px;background:#0f172a;color:#f8fafc;'
+        +'box-shadow:0 3px 12px rgba(0,0,0,.35);border-bottom:1px solid #334155;';
+      const txt=document.createElement('span');
+      txt.textContent=((typeof LANG!=='undefined'&&LANG==='en')
+        ?'A new version is available — v':'Une mise à jour est disponible — v')+vu;
+      const dl=document.createElement('a');
+      dl.href=rel.html_url||'#';
+      dl.target='_blank';
+      dl.rel='noopener';
+      dl.textContent=(typeof LANG!=='undefined'&&LANG==='en')?'Download':'Télécharger';
+      dl.style.cssText='color:#fff;background:#2563eb;padding:4px 12px;border-radius:6px;'
+        +'font-weight:700;text-decoration:none;';
+      const off=document.createElement('button');
+      off.textContent='✕';
+      off.title=(typeof LANG!=='undefined'&&LANG==='en')?'Remind me later':'Me le rappeler plus tard';
+      off.style.cssText='background:transparent;border:1px solid #475569;color:#cbd5e1;'
+        +'border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px;';
+      off.onclick=function(){ try{bar.remove();}catch(e){} localStorage.setItem(config.dismissKey,String(Date.now())); };
+      bar.appendChild(txt); bar.appendChild(dl); bar.appendChild(off);
+      document.body.appendChild(bar);
+    }catch(e){ /* silencieux de bout en bout */ }
+  }
+  run();
+})();
 
 </script>
 </body>

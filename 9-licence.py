@@ -218,11 +218,10 @@ def make_license(sk_hex, plan, days, machine_id="", activations=2, serial=None):
 
     days = None ou 0 -> licence à vie.
 
-    Le code machine est OBLIGATOIRE : chaque licence est liée à un ordinateur
-    et à un seul. Une licence transférable serait partageable à l'infini, ce
-    qui viderait l'abonnement de son sens. Le contrôle est fait ici, dans le
-    noyau, pour qu'aucun outil (interface graphique, mode texte, script) ne
-    puisse le contourner.
+    Le code machine est demandé pour la FACTURATION et le COMPTAGE des
+    ordinateurs (le serveur limite le nombre d'ordinateurs distincts par
+    code d'achat). Il n'est pas un verrou : la clé émise reste valable sur
+    tout poste, la signature et l'échéance sont les vraies protections.
     """
     mid = normalize_mid(machine_id)
     if not mid:
@@ -622,24 +621,31 @@ def check_license(key, pk_hex, state_path, mid=None, now=None):
     res["serial"] = payload.get("sn", "")
     res["expires"] = payload.get("exp", "")
 
-    # Liaison machine : une clé émise pour une machine précise n'est
-    # utilisable que là. Une clé « mid » vide reste transférable.
+    # Liaison machine : PUREMENT INFORMATIVE, JAMAIS BLOQUANTE (correctif v9).
+    #
+    # Le code machine a causé trop de désagréments sous Windows : l'empreinte
+    # changeait après une mise à jour du système, une réinstallation, ou selon
+    # l'outil qui la lisait, et la licence payée était alors refusée. C'est
+    # terminé : tant que la signature est bonne et la date d'échéance non
+    # dépassée, la clé reste active sur n'importe quel poste.
+    #
+    # Les vraies protections restent la signature Ed25519 (aucune clé ne peut
+    # être fabriquée) et l'échéance signée. Le « mid » n'est plus qu'un
+    # renseignement ; la limite du nombre d'ordinateurs est déjà appliquée
+    # côté serveur, au moment de l'activation du code d'achat.
     want = (payload.get("mid") or "").strip()
     if want:
-        # On confronte la clé à TOUTES les empreintes légitimes de ce poste :
-        # l'actuelle et, sous Windows, l'ancienne empreinte « wmic » des
-        # versions antérieures. Une licence déjà payée ne doit jamais être
-        # invalidée par une simple mise à jour de l'application.
-        if mid:
-            valides = [res["machine"]]
-        else:
-            try:
-                valides = machine_ids_compatibles()
-            except Exception:
-                valides = [res["machine"]]
+        try:
+            valides = machine_ids_compatibles()
+        except Exception:
+            valides = []
+        cur = (mid or "").strip().upper()
+        if cur and cur not in valides:
+            # Le poste courant fait toujours PARTIE des empreintes légitimes :
+            # même si la sonde a changé d'avis, on ne refuse jamais.
+            valides.append(cur)
         if want not in valides:
-            res["reason"] = "machine"
-            return res
+            res["machineAutre"] = True
 
     ok_clock, eff = clock_guard(state_path, now)
     if not ok_clock:

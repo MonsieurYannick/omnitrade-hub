@@ -91,8 +91,13 @@ Envoie le code au client. Dans l'app, il colle le code → l'app appelle
 
 ## Sécurité — ce qu'il faut comprendre (relis ce paragraphe !)
 
-- **Le client ne peut RIEN inventer** : la licence achetée est liée à SON
-  ordinateur (code machine). Chaque achat = nb d'ordinateurs limité (`--max`).
+- **Le client ne peut RIEN inventer** : impossible de fabriquer une clé
+  (signature Ed25519 vérifiée localement) ni de prolonger sa date (échéance
+  signée). Chaque achat = nb d'ordinateurs limité (`--max`), compté côté
+  serveur lors de l'activation.
+- **Depuis la v9, plus aucun blocage par code machine** : si l'empreinte
+  change (mise à jour Windows, réinstallation), la licence reste active.
+  Le code machine n'est plus qu'un compteur d'ordinateurs côté serveur.
 - **La table est verrouillée** (RLS) : seul le serveur y touche.
 - **L'outil vendeur exige `OTH_ADMIN_KEY`** : seuls toi et le serveur de
   paiement (plus tard) peuvent créer des codes.

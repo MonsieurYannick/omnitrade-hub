@@ -264,15 +264,14 @@
     l'éditeur. Gardez-le à côté du programme : il ne contient aucun
     secret, il sert uniquement à vérifier que votre clé est authentique.
 
-  ▸ UNE LICENCE = UN ORDINATEUR
-    Chaque clé est maintenant liée au code machine communiqué lors de la
-    commande. Elle ne fonctionne que sur cet ordinateur.
-
-    Vous trouvez votre code dans la page « Licence », encadré
-    « CODE DE VOTRE ORDINATEUR », avec un bouton Copier.
-
-    Si vous changez de machine, contactez le support : une nouvelle clé
-    vous sera émise.
+  ▸ FIN DU BLOCAGE PAR CODE MACHINE (v9)
+    Jusqu'à la v8, chaque clé était liée au code machine communiqué lors de
+    la commande et ne fonctionnait que sur cet ordinateur — sous Windows,
+    une mise à jour du système pouvait faire changer ce code et la licence
+    était alors refusée. C'est corrigé : depuis la v9, la signature et la
+    date d'échéance restent les protections, mais la licence n'est PLUS
+    refusée si l'empreinte de l'ordinateur change. Elle fonctionne partout
+    jusqu'à la fin de son abonnement.
 
   ▸ AFFICHAGE PLUS CLAIR APRÈS ACTIVATION
     Le rappel des limites du mode gratuit restait visible même une fois
@@ -357,9 +356,12 @@
     vous conservez le journal de trades MANUEL, limité à 10 trades.
     Les modules MT5 Sync, Agents IA, Éducation & Macro, Market Hub,
     Playbook et Sauvegarde Cloud sont réservés aux abonnés.
-    Pour activer : menu de gauche → « Licence », collez votre clé.
-    Votre code machine s'affiche sur cette même page : communiquez-le
-    lors de la commande pour recevoir une clé liée à votre ordinateur.
+    Pour activer : menu de gauche → « Licence », collez votre code
+    d'achat (ex : OTH-M5F3XQ2P-RTLK92U) — le serveur vous remet votre clé
+    tout seul, vous n'avez rien d'autre à faire.
+    Votre code machine s'affiche sur cette même page : simple identifiant
+    de cet ordinateur, il sert uniquement à compter le nombre d'ordinateurs
+    autorisés. Il ne bloque jamais la licence.
 
   ▸ ALERTES EN ARRIÈRE-PLAN
     Un bouton « 🔔 Alertes » en haut à droite active les notifications
