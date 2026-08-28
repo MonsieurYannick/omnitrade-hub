@@ -6,7 +6,10 @@
 #  runner macOS de GitHub Actions : aucun prompt, sortie sur stdout, échec
 #  = code de retour non nul.
 #
-#  Résultat : OmniTradeHub-macOS.dmg (+ OmniTradeHub-macOS-PRET.zip)
+#  Résultat : OmniTradeHub-macOS-<VARIANT>.dmg (+ OmniTradeHub-macOS-<VARIANT>-PRET.zip)
+#  VARIANT indique l'architecture : intel (x86_64) ou arm64 (Apple Silicon).
+#  Par défaut : arch de la machine de build. Le nom rend le téléchargement
+#  explicite (« Intel » / « AppleSilicon ») pour chaque type de Mac.
 #  Version : env VER si fourni, sinon le numéro du tag vX.Y.Z (env GITHUB_REF),
 #            sinon le numéro du fichier omnitrade-v<NN>.html.
 # ═══════════════════════════════════════════════════════════════════════════
@@ -24,6 +27,18 @@ VERSION="${VER:-}"
 if [[ -z "$VERSION" && -n "$VER_TAG" ]]; then VERSION="$VER_TAG"; fi
 if [[ -z "$VERSION" ]]; then VERSION="0"; fi
 echo "  Version : $VERSION"
+
+# ── Architecture ciblée (variante) ──────────────────────────────────────────
+VARIANT="${VARIANT:-}"
+if [[ -z "$VARIANT" ]]; then
+  case "$(uname -m)" in
+    arm64|aarch64) VARIANT="AppleSilicon" ;;
+    *)             VARIANT="Intel" ;;
+  esac
+fi
+OUT_DMG="OmniTradeHub-macOS-${VARIANT}.dmg"
+OUT_ZIP="OmniTradeHub-macOS-${VARIANT}-PRET.zip"
+echo "  Variant : ${VARIANT}  (${OUT_DMG})"
 
 # ── Fichier source : le HTML de production (jamais les copies de travail) ──
 pick_app(){
@@ -139,6 +154,32 @@ LOGF="$LOGDIR/OmniTradeHub.log"; : > "$LOGF" 2>/dev/null || LOGF="/tmp/OmniTrade
 BIN="$RES/OmniTradeBridge/OmniTradeBridge"
 chmod +x "$BIN" 2>/dev/null
 PORT="8765"
+
+# ── Contrôle d'architecture : binaire = mauvais type de CPU (Intel / M-series) ──
+#  On prévient clairement au lieu d'échouer silencieusement (Bad CPU type).
+arch_ok=1
+if command -v file >/dev/null 2>&1 && [[ -f "$BIN" ]]; then
+  ARCH_BIN="$(file -b "$BIN")"
+  case "$ARCH_BIN" in
+    *arm64*)   if [[ "$(uname -m)" == "x86_64" ]]; then arch_ok=0; fi ;;
+    *x86_64*)  if [[ "$(uname -m)" == "arm64" ]]; then arch_ok=0; fi ;;
+  esac
+fi
+
+if [[ "$arch_ok" == "0" ]]; then
+  MSG="OmniTrade Hub ne peut pas démarrer : le moteur intégré est pour l'autre type de Mac.
+Vous avez un Mac $(uname -m) et cet installateur est pour « il faut l'autre fichier ».
+
+→ Téléchargez la bonne version depuis la page des téléchargements :
+   • Macs Intel          → OmniTradeHub-macOS-Intel.dmg
+   • Macs Apple Silicon  → OmniTradeHub-macOS-AppleSilicon.dmg
+   (Menu  → À propos de ce Mac : « Puce » = Apple Silicon, « Processeur » = Intel)"
+  echo "[architecture] $MSG" >> "$LOGF" 2>&1
+  echo "$MSG" >/dev/null
+  osascript -e 'display dialog "OmniTrade Hub — mauvais installateur détecté.\n\n'"$MSG"'" with title "OmniTrade Hub" buttons {"OK"} default button "OK" with icon caution' 2>/dev/null || true
+  exit 1
+fi
+
 TOKEN=$( "$BIN" --show-token --no-keep-open 2>/dev/null | tail -1 )
 case "$TOKEN" in *" "*|*[Ff]lask*) TOKEN="ZELLA_TOKEN" ;; esac
 [[ -n "$TOKEN" ]] || TOKEN="ZELLA_TOKEN"
@@ -195,14 +236,14 @@ kill -9 $ENGINE_TEST 2>/dev/null || true
 
 # ── 6. Paquets : .app zipé + .dmg ────────────────────────────────────────────
 echo "→ Paquetage…"
-rm -f OmniTradeHub-macOS-PRET.zip OmniTradeHub-macOS.dmg
-zip -qr OmniTradeHub-macOS-PRET.zip "$APPBUNDLE"
+rm -f "$OUT_ZIP" "$OUT_DMG"
+zip -qr "$OUT_ZIP" "$APPBUNDLE"
 mkdir -p staging
 cp -R "$APPBUNDLE" staging/
 ln -sf /Applications staging/Applications
 if command -v hdiutil >/dev/null; then
   hdiutil create -volname "OmniTradeHub" -srcfolder staging \
-    -ov -format UDZO OmniTradeHub-macOS.dmg >/tmp/zt_dmg.log 2>&1 \
+    -ov -format UDZO "$OUT_DMG" >/tmp/zt_dmg.log 2>&1 \
     || { tail -5 /tmp/zt_dmg.log; echo "[!] Échec hdiutil"; exit 1; }
 else
   echo "[!] hdiutil introuvable"; exit 1
@@ -210,5 +251,5 @@ fi
 rm -rf staging dist build
 
 echo "══════════════════════════════════════════════════════════════"
-echo "  ✅ TERMINÉ  (v$VERSION)  —  $(du -sh OmniTradeHub-macOS.dmg 2>/dev/null | cut -f1)"
+echo "  ✅ TERMINÉ  (v$VERSION)  —  $(du -sh "$OUT_DMG" 2>/dev/null | cut -f1)"
 echo "══════════════════════════════════════════════════════════════"

@@ -3,13 +3,18 @@ name: Fabriquer l'installateur macOS
 # ── Comment l'utiliser ──────────────────────────────────────────────────────
 #  1. Onglet « Actions » → « Fabriquer l'installateur macOS » → « Run
 #     workflow » (optionnel, pour un essai).
-#  2. Plus simple : pousser le code puis un TAG vX.Y.Z (ex : v8.88).
-#     Le tag déclenche LA Release : le .dmg (et le .zip) y sont déposés
+#  2. Plus simple : pousser le code puis un TAG vX.Y.Z (ex : v9.0).
+#     Le tag déclenche LA Release : les .dmg (et .zip) y sont déposés
 #     automatiquement, le bandeau « mise à jour » de l'app les annonce.
 #
 #  IMPORTANT : pensez à aligner « const APP={ version: 'X.Y.Z' } » dans
 #  omnitrade-v21.html AVANT de pousser le tag — c'est cette valeur que
 #  compare le bandeau de mise à jour.
+#
+#  Deux builds (matrix) → un installateur par architecture, nommé de façon
+#  explicite pour que chacun sache quoi télécharger :
+#    - OmniTradeHub-macOS-Intel.dmg          (Macs Intel / x86_64)
+#    - OmniTradeHub-macOS-AppleSilicon.dmg   (Macs M1/M2/M3/M4 / arm64)
 
 on:
   workflow_dispatch:
@@ -27,11 +32,22 @@ permissions:
 
 jobs:
   build-macos:
-    name: Installateur macOS (.dmg)
-    runs-on: macos-latest
+    name: Installateur macOS (${{ matrix.arch }}) (.dmg)
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     env:
       VER: ${{ inputs.version }}
+      VARIANT: ${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: "Intel"
+            arch: "Intel"
+            runner: macos-13        # Apple Intel (x86_64)
+          - variant: "AppleSilicon"
+            arch: "Apple Silicon"
+            runner: macos-14        # Apple Silicon (arm64)
 
     steps:
       - name: Récupération du code
@@ -49,24 +65,40 @@ jobs:
       - name: Artéfacts à télécharger
         uses: actions/upload-artifact@v4
         with:
-          name: installateur-macos
+          name: installateur-macos-${{ matrix.variant }}
           path: |
-            OmniTradeHub-macOS.dmg
-            OmniTradeHub-macOS-PRET.zip
+            OmniTradeHub-macOS-${{ matrix.variant }}.dmg
+            OmniTradeHub-macOS-${{ matrix.variant }}-PRET.zip
           if-no-files-found: error
 
-      - name: Publication sur la Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publication sur la Release (Intel)
+        if: matrix.variant == 'Intel' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            OmniTradeHub-macOS.dmg
-            OmniTradeHub-macOS-PRET.zip
+            OmniTradeHub-macOS-Intel.dmg
+            OmniTradeHub-macOS-Intel-PRET.zip
           name: OmniTrade Hub v${{ github.ref_name }}
           body: |
             Nouvelle version disponible.
 
-            **macOS** — `OmniTradeHub-macOS.dmg` (glisser l'app sur Applications, puis clic-droit → Ouvrir au premier lancement).
+            **macOS — choisissez votre version ci-dessous ⬇️**
+
+            | Votre Mac | Fichier |
+            |---|---|
+            | **Intel** (processeur Intel Core / Xeon) | `OmniTradeHub-macOS-Intel.dmg` |
+            | **Apple Silicon** (puce M1 / M2 / M3 / M4) | `OmniTradeHub-macOS-AppleSilicon.dmg` |
+
+            Comment savoir ? Menu  → **À propos de ce Mac** : « **Puce** » = Apple Silicon · « **Processeur** » = Intel.
 
             **Windows** — l'installateur `.exe` est ajouté automatiquement par le workflow « Fabriquer l'installateur Windows » sur le même tag.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publication sur la Release (Apple Silicon)
+        if: matrix.variant == 'AppleSilicon' && startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            OmniTradeHub-macOS-AppleSilicon.dmg
+            OmniTradeHub-macOS-AppleSilicon-PRET.zip
           token: ${{ secrets.GITHUB_TOKEN }}
