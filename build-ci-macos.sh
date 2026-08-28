@@ -216,8 +216,14 @@ BIN_TEST="$APPBUNDLE/Contents/Resources/OmniTradeBridge/OmniTradeBridge"
 "$BIN_TEST" --host 127.0.0.1 --port 8765 --token ZT_TEST --no-keep-open \
   >"/tmp/zt_apptest.log" 2>&1 &
 ENGINE_TEST=$!
-sleep 4
-PONG=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:8765/api/ping?token=ZT_TEST" || true)
+# Le premier lancement peut mettre plus de 4 s (création du device.id,
+# chargement de cb_intel) : on boucle jusqu'à ~20 s au lieu d'un sleep fixe.
+PONG="000"
+for i in $(seq 1 20); do
+  sleep 1
+  PONG=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:8765/api/ping?token=ZT_TEST" || true)
+  [[ "$PONG" == "200" ]] && break
+done
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:8765/" || true)
 PAGE=$(curl -s -m 2 "http://127.0.0.1:8765/" || true)
 [[ "$PONG" == "200" ]] && echo "   ✓ le moteur du .app répond ($PONG)" \
