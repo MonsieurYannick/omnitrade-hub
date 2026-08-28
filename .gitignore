@@ -1,45 +1,36 @@
-# ── macOS ──────────────────────────────────────────────────────────────
-.DS_Store
-
-# ── Secrets — NE JAMAIS pousser ────────────────────────────────────────
+# ── Secrets et clés locales : jamais commités ────────────────
+activation/.sk.env
+activation/.adm.json
 groq.key
 openrouter.key
-private_key*.txt
-private_key*.pem
-private_key*
-*.pem
 *.key
-!public_key.txt
-activation/.adm.json
-activation/.env
-GENERATEUR-DE-LICENCES.py
-oth_admin/
 
-# ── Python ─────────────────────────────────────────────────────────────
-__pycache__/
-*.py[cod]
-.venv*/
-venv/
-*.egg-info/
-
-# ── Builds et artefacts compilés ───────────────────────────────────────
+# ── Artefacts de build et bundles ────────────────────────────
+OmniTrade Hub Bridge.app/
+OmniTradeHub.app/
+python-build/
 build/
 dist/
-*.spec
-OmniTradeHub.app/
-OmniTrade Hub Bridge.app/
-OmniTradeHub-macOS-PRET*/
-OmniTradeHub-Windows-PRET*/
-OmniTradeHub-macOS.dmg
-OmniTradeHub-macOS-PRET.zip
-OmniTradeHub-Windows-PRET.zip
-OmniTradeHub-Setup-*.exe
-build-log.txt
+staging/
+*.dmg
+*.zip
+installateur-windows/
+OmniTradeBridge.spec
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.pyc
+
+# ── Supabase (CLI local) ─────────────────────────────────────
+activation/supabase/.temp/
+activation/supabase/.branches/
+**/.temp/
+
+# ── Système et divers ────────────────────────────────────────
+.DS_Store
 *.log
 
-# ── Copies de travail et sauvegardes ───────────────────────────────────
-omnitrade-v*-pre-refactor.html
-zellatrack-*.html
-*.backup.htmlOmniTradeHub.iconset
-activation/.sk.env
-activation/supabase/.temp/
+# ── Node et source des guides ────────────────────────────────
+node_modules/
+docs/_src/captures/
+docs/_src/*.pdf

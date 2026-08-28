@@ -1,0 +1,12 @@
+{
+  "name": "omnitrade-guides-src",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "guides": "node guides.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^25.9.0"
+  }
+}
