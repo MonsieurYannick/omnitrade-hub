@@ -1,0 +1,43 @@
+# ── macOS ──────────────────────────────────────────────────────────────
+.DS_Store
+
+# ── Secrets — NE JAMAIS pousser ────────────────────────────────────────
+groq.key
+openrouter.key
+private_key*.txt
+private_key*.pem
+private_key*
+*.pem
+*.key
+!public_key.txt
+activation/.adm.json
+activation/.env
+GENERATEUR-DE-LICENCES.py
+oth_admin/
+
+# ── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv*/
+venv/
+*.egg-info/
+
+# ── Builds et artefacts compilés ───────────────────────────────────────
+build/
+dist/
+*.spec
+OmniTradeHub.app/
+OmniTrade Hub Bridge.app/
+OmniTradeHub-macOS-PRET*/
+OmniTradeHub-Windows-PRET*/
+OmniTradeHub-macOS.dmg
+OmniTradeHub-macOS-PRET.zip
+OmniTradeHub-Windows-PRET.zip
+OmniTradeHub-Setup-*.exe
+build-log.txt
+*.log
+
+# ── Copies de travail et sauvegardes ───────────────────────────────────
+omnitrade-v*-pre-refactor.html
+zellatrack-*.html
+*.backup.html

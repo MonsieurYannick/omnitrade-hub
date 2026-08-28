@@ -1,0 +1,655 @@
+═══════════════════════════════════════════════════════════════════════════
+  OmniTrade Hub — Journal de Trading professionnel
+  Guide de démarrage · 2 minutes
+═══════════════════════════════════════════════════════════════════════════
+
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                                                                     │
+  │   DÉMARRER : UN SEUL DOUBLE-CLIC                                    │
+  │                                                                     │
+  │     Sur Mac      →  1-START-MAC.command                             │
+  │     Sur Windows  →  1-START-WINDOWS.bat                             │
+  │                                                                     │
+  │   C'est tout. OmniTrade Hub s'ouvre dans votre navigateur.          │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+
+
+───────────────────────────────────────────────────────────────────────────
+  LES FICHIERS DE CE DOSSIER, DANS L'ORDRE
+───────────────────────────────────────────────────────────────────────────
+
+  Les fichiers sont NUMÉROTÉS. Suivez simplement les numéros.
+
+   0-LISEZ-MOI.txt              ce document
+
+   1-START-MAC.command          ▶ LANCEZ CECI  (Mac)
+   1-START-WINDOWS.bat          ▶ LANCEZ CECI  (Windows)
+                                C'est le seul fichier dont vous avez
+                                besoin au quotidien.
+
+   2-OmniTradeExport.mq5        facultatif — à installer dans MetaTrader 5
+                                seulement si vous voulez synchroniser vos
+                                trades automatiquement (voir plus bas).
+
+   3-Lancer-le-moteur-seul      facultatif — démarre le moteur SANS ouvrir
+                                le navigateur. Pour les cas particuliers.
+
+   4-COMPILER-SUR-MON-MAC       facultatif, MAC UNIQUEMENT — produit une
+                                version qui fonctionne sans Python.
+                                Réservé aux utilisateurs avancés.
+                                Sous Windows, rien à compiler : tout
+                                fonctionne dès le fichier 1-.
+
+   omnitrade-vXX.html           l'application elle-même
+   9-moteur-de-donnees.py       le moteur — N'Y TOUCHEZ PAS
+   license_core.py              vérification de licence — N'Y TOUCHEZ PAS
+
+  ▸ Ne renommez, ne déplacez et ne supprimez aucun de ces fichiers.
+    Gardez-les tous ENSEMBLE dans le même dossier.
+
+
+───────────────────────────────────────────────────────────────────────────
+  macOS BLOQUE L'OUVERTURE ? (message « endommagé »)
+───────────────────────────────────────────────────────────────────────────
+
+  Si macOS affiche l'un de ces messages :
+
+      « ... est endommagé et ne peut pas être ouvert.
+        Vous devriez placer cet élément dans la Corbeille. »
+
+      « ... ne peut pas être ouvert car Apple ne peut pas vérifier
+        l'absence de logiciels malveillants. »
+
+  RIEN N'EST ENDOMMAGÉ. Ne cliquez PAS sur « Placer dans la corbeille ».
+
+  Ce que macOS vous dit réellement : « ce logiciel vient d'Internet et
+  son auteur n'a pas payé l'enregistrement annuel auprès d'Apple ».
+  C'est tout. Le message est trompeur, il est affiché tel quel par Apple
+  pour tous les logiciels indépendants.
+
+
+  LA SOLUTION — 30 SECONDES, UNE SEULE FOIS
+  ─────────────────────────────────────────────────────────────────────
+
+  1. Décompressez le ZIP et placez le dossier sur votre BUREAU.
+
+  2. Ouvrez l'application « Terminal » :
+        touche ⌘ (cmd) + barre d'espace, tapez : terminal , puis Entrée
+
+  3. Dans la fenêtre Terminal, tapez exactement ceci — avec l'espace
+     final — SANS appuyer sur Entrée :
+
+        xattr -cr 
+
+  4. Glissez le DOSSIER OmniTradeHub-macOS depuis le Bureau et déposez-le
+     dans la fenêtre Terminal. Son chemin s'écrit tout seul.
+
+  5. Appuyez sur Entrée. Aucun message ne s'affiche : c'est normal,
+     cela veut dire que tout s'est bien passé.
+
+  6. Fermez le Terminal. Double-cliquez « 1-START-MAC.command ».
+     C'est terminé — vous n'aurez plus jamais à le refaire.
+
+
+  ▸ Vous préférez éviter le Terminal ?
+    Le dossier contient « 0-DEBLOQUER-SI-BLOQUE.command ».
+    Faites un CLIC DROIT dessus → « Ouvrir » → « Ouvrir ».
+    Il fait exactement la même chose, tout seul.
+    (Si lui aussi est bloqué, utilisez la méthode Terminal ci-dessus :
+     elle fonctionne dans tous les cas, sur toutes les versions de macOS.)
+
+
+  ▸ Cette manipulation est-elle risquée ?
+    Non. Elle retire l'étiquette « téléchargé depuis Internet » sur CE
+    dossier uniquement. Aucun réglage de sécurité de votre Mac n'est
+    modifié, et la protection reste active partout ailleurs.
+    Ne faites jamais cela sur un logiciel dont vous ignorez l'origine.
+
+
+  ▸ Pourquoi ce blocage existe-t-il ?
+    Apple demande 99 $ par an aux éditeurs pour enregistrer leurs
+    logiciels. Sans cet enregistrement, macOS affiche cet avertissement,
+    même pour un programme parfaitement sain.
+
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  SÉCURITÉ                                                           │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Votre adresse contient une clé propre à votre ordinateur. Elle donne
+  accès à votre journal : traitez-la comme un mot de passe.
+
+  ▸ Ne la publiez nulle part, ne la partagez avec personne.
+
+  ▸ Sans cette clé, une personne qui tomberait sur l'adresse ne verrait
+    rien du tout : le moteur refuse la requête.
+
+  ▸ Si vous pensez l'avoir partagée par erreur, fabriquez-en une
+    nouvelle. Ouvrez le Terminal et tapez, dans le dossier
+    OmniTrade Hub :
+
+        ./bin/OmniTradeBridge --reset-token --no-keep-open
+
+    (ou, sans version compilée :
+        python3 9-moteur-de-donnees.py --reset-token --no-keep-open)
+
+    L'ancienne adresse cesse aussitôt de fonctionner. Relancez
+    « 1-START-MAC.command » pour obtenir la nouvelle.
+
+  ▸ Vos données ne sont copiées sur aucun serveur. Elles restent
+    entièrement sur votre ordinateur.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 7.1
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ CORRECTION IMPORTANTE
+    Le lien affiché au démarrage ne pouvait pas fonctionner : le moteur
+    n'acceptait que les connexions venant de l'ordinateur lui-même.
+    Il accepte désormais celles de vos appareils, à condition qu'ils
+    présentent votre clé d'accès.
+
+  ▸ RÉVOQUER UNE CLÉ PARTAGÉE PAR ERREUR
+    Vous pouvez fabriquer une nouvelle clé à tout moment : l'ancienne
+    adresse cesse aussitôt de fonctionner. Procédure dans la section
+    « SÉCURITÉ » plus haut.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 7.0
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.9
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.8
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ macOS « ... est endommagé » : PROCÉDURE CLAIRE
+    Quand un client reçoit le dossier par Internet, macOS peut refuser de
+    l'ouvrir en affichant qu'il serait « endommagé ». Le fichier est en
+    parfait état : c'est un contrôle de sécurité d'Apple.
+
+    Le dossier contient désormais « 0-DEBLOQUER-SI-BLOQUE.command », qui
+    règle le problème tout seul. Le mode d'emploi explique aussi la
+    méthode Terminal, qui fonctionne dans absolument tous les cas.
+
+  ▸ INSTRUCTION OBSOLÈTE CORRIGÉE
+    Le mode d'emploi conseillait « clic droit → Ouvrir ». Cette méthode ne
+    fonctionne PAS pour le message « endommagé », et Apple l'a retirée des
+    versions récentes de macOS. Elle a été remplacée.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.7
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ COMPILATION macOS : LE SCRIPT S'ARRÊTAIT AU DÉMARRAGE
+    Le fichier « 4-COMPILER-SUR-MON-MAC.command » réclamait un fichier
+    nommé « license_core.py », introuvable dans le dossier — alors que le
+    noyau de licence était bien présent, sous le nom « 9-licence.py ».
+
+    La préparation du paquet renommait les fichiers mais oubliait de
+    mettre à jour cette référence. C'est corrigé, et un contrôle refuse
+    désormais de produire une archive dont un script citerait un fichier
+    absent.
+
+  ▸ WINDOWS : LE MOTEUR NE DÉMARRAIT PAS SANS BINAIRE
+    Même cause : les deux lanceurs Windows cherchaient « mt5_bridge.py »
+    au lieu de « 9-moteur-de-donnees.py ». Sur un poste sans version
+    compilée, le moteur ne se lançait tout simplement pas.
+
+  ▸ APPLICATION COMPILÉE : LICENCE ENFIN RECONNUE
+    Une fois compilée, l'application ne retrouvait plus son fichier de
+    vérification et se verrouillait intégralement, quelle que soit la clé
+    saisie. Elle le cherche maintenant aussi à côté du programme et dans
+    le dossier parent.
+
+  ▸ CLÉ PUBLIQUE PRÉSENTE DANS LE PAQUET COMPILÉ
+    Le fichier « public_key.txt » manquait à la racine du paquet produit
+    par la compilation. Il y figure désormais, comme dans les autres
+    paquets.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.6
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ MARKET HUB : PLUS DE GEL NI D'ÉCRAN VIDE
+    Le calendrier et les actualités disparaissaient dès qu'une mise à jour
+    échouait, et le message « Lancez OmniTrade Hub Bridge » revenait alors
+    que le moteur tournait parfaitement.
+
+    Désormais, un incident réseau n'efface plus rien : vous gardez sous les
+    yeux les dernières données reçues, avec un bandeau discret qui vous
+    indique depuis quand elles datent.
+
+  ▸ CHARGEMENT BEAUCOUP PLUS RAPIDE
+    Les sources d'information étaient interrogées l'une après l'autre. Elles
+    le sont maintenant toutes en même temps : le fil d'actualités passe de
+    6 secondes à environ 2 secondes, et de 24 à 9 secondes quand plusieurs
+    sites répondent mal.
+
+  ▸ BOUTON « ACTUALISER » VRAIMENT RÉACTIF
+    Il affiche une roue qui tourne pendant la mise à jour, force une
+    récupération neuve, et ne se bloque jamais. Cliquer plusieurs fois de
+    suite n'envoie plus des dizaines de requêtes inutiles.
+
+  ▸ VOS DONNÉES SURVIVENT À UNE COUPURE
+    Le calendrier, les actualités et le sentiment sont conservés sur votre
+    ordinateur. Même en rouvrant l'application sans connexion, vous
+    retrouvez immédiatement les dernières informations reçues.
+
+  ▸ APPLICATION COMPILÉE macOS : CERTIFICATS CORRIGÉS
+    Dans la version compilée, les certificats de sécurité manquaient : tous
+    les sites en HTTPS devenaient injoignables et le Market Hub restait
+    vide. Ils sont maintenant intégrés, et la compilation refuse même de
+    se terminer si ce contrôle échoue.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.5
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ ACTIVATION DE LICENCE CORRIGÉE
+    Certaines clés pourtant valides étaient refusées avec le message
+    « Clé invalide (falsifiée ou incorrecte) ».
+
+    Cause : la clé de vérification livrée avec l'application n'était pas
+    celle qui avait servi à signer la licence. La signature était donc
+    mathématiquement correcte, mais comparée à la mauvaise référence.
+
+    L'application est désormais livrée avec le fichier public_key.txt de
+    l'éditeur. Gardez-le à côté du programme : il ne contient aucun
+    secret, il sert uniquement à vérifier que votre clé est authentique.
+
+  ▸ UNE LICENCE = UN ORDINATEUR
+    Chaque clé est maintenant liée au code machine communiqué lors de la
+    commande. Elle ne fonctionne que sur cet ordinateur.
+
+    Vous trouvez votre code dans la page « Licence », encadré
+    « CODE DE VOTRE ORDINATEUR », avec un bouton Copier.
+
+    Si vous changez de machine, contactez le support : une nouvelle clé
+    vous sera émise.
+
+  ▸ AFFICHAGE PLUS CLAIR APRÈS ACTIVATION
+    Le rappel des limites du mode gratuit restait visible même une fois
+    la licence active, ce qui laissait croire que les modules étaient
+    encore bloqués. Il disparaît désormais dès l'activation.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.4
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ L'AGENT DE DISCUSSION COMPREND ENFIN
+    Il répondait par un menu dès qu'une phrase sortait de sa liste de
+    mots-clés : « merci », « salut », une question sur l'IPC ou un coup
+    de fatigue déclenchaient tous la même réponse toute faite.
+
+    Désormais il comprend le langage courant, les abréviations (rr, tp,
+    ob, fvg, smc, stp, slt) et les fautes d'orthographe. Il tient le fil
+    de la conversation : « explique plus » ou « un exemple » enchaînent
+    sur le sujet précédent.
+
+  ▸ IL CONNAÎT TOUTES LES ÉCOLES DE TRADING
+    Price action, SMC, ICT, Wyckoff, supply & demand, Elliott, chartisme,
+    order flow, volumétrie, scalping, swing, trading algorithmique... plus
+    les figures, les indicateurs, la macro et la gestion du risque.
+    Il reste neutre : forces ET limites de chaque méthode.
+
+  ▸ IL SOUTIENT QUAND ÇA VA MAL
+    Fatigue, stress, peur d'entrer, colère après une perte, découragement,
+    série noire : il écoute, explique le mécanisme, et propose UNE action
+    concrète. Il s'appuie sur vos chiffres réels quand vous en avez.
+
+  ▸ IL NE BLOQUE PLUS SUR LES DONNÉES MANQUANTES
+    Une question théorique reçoit sa réponse même si le calendrier ou le
+    moteur ne sont pas démarrés. Vos trades et le calendrier ne sont
+    utilisés que si la question porte réellement dessus.
+
+  ▸ IL RESTE HONNÊTE
+    Il ne prédit aucune direction, ne garantit aucun gain, ne passe aucun
+    ordre, et le dit clairement. Hors trading, il vous renvoie ailleurs
+    plutôt que d'inventer.
+
+
+───────────────────────────────────────────────────────────────────────────
+  NOUVEAU DANS LA VERSION 6.3
+───────────────────────────────────────────────────────────────────────────
+
+  ▸ NOUVEAU NOM
+    L'application s'appelle désormais OmniTrade Hub. Vos données, vos
+    trades et vos réglages sont conservés : rien à refaire.
+
+  ▸ FICHIER 9-licence.py — NE LE SUPPRIMEZ PAS
+    Ce fichier sert à vérifier votre licence. Le supprimer ou le
+    modifier VERROUILLE l'application : cela ne la rend pas gratuite.
+    Il ne contient aucune donnée personnelle ni aucun secret.
+
+  ▸ SUPPORT DIRECT
+    L'entrée « Support » du menu contient désormais les coordonnées
+    réelles : e-mail, WhatsApp et Telegram. Un clic suffit.
+
+  ▸ FICHIERS NUMÉROTÉS
+    Les fichiers du dossier sont numérotés dans l'ordre d'utilisation.
+    Vous n'avez besoin que du 1- au quotidien.
+
+  ▸ SUPPORT & CONTACT
+    Une entrée « Support » dans le menu de gauche : e-mail, WhatsApp et
+    Telegram. Vos informations techniques (version, système, licence,
+    code machine) sont jointes automatiquement à l'e-mail.
+
+  ▸ NOTES & PSYCHO EN DEUX COLONNES
+    À gauche votre coach, qui publie ses conseils tout seul.
+    À droite la conversation avec l'agent : posez vos questions.
+    L'agent croise VOS trades avec l'actualité du moment récupérée par
+    le moteur (calendrier, dépêches, positionnement de la foule).
+
+  ▸ MT5 SYNC BLOQUÉ SANS ABONNEMENT
+    En mode gratuit, la synchronisation est strictement impossible et le
+    voyant reste ROUGE. Aucun trade MT5 ne peut être lu ni enregistré.
+
+  ▸ ABONNEMENT ET LICENCE
+    L'accès complet nécessite désormais une clé de licence. Sans clé,
+    vous conservez le journal de trades MANUEL, limité à 10 trades.
+    Les modules MT5 Sync, Agents IA, Éducation & Macro, Market Hub,
+    Playbook et Sauvegarde Cloud sont réservés aux abonnés.
+    Pour activer : menu de gauche → « Licence », collez votre clé.
+    Votre code machine s'affiche sur cette même page : communiquez-le
+    lors de la commande pour recevoir une clé liée à votre ordinateur.
+
+  ▸ ALERTES EN ARRIÈRE-PLAN
+    Un bouton « 🔔 Alertes » en haut à droite active les notifications
+    du système. Vous êtes prévenu même en consultant un autre site.
+    Note honnête : l'onglet OmniTrade Hub doit rester OUVERT (il peut
+    être en arrière-plan). Une page fermée ne peut rien envoyer.
+
+  ▸ CHAT AVEC VOTRE COACH IA
+    Dans « Notes & Psycho », posez vos questions directement à l'agent :
+    votre performance, votre discipline, le dimensionnement de position,
+    le calendrier, une paire précise ou une notion économique. Les
+    réponses s'appuient sur VOS trades réels. Tout est calculé sur votre
+    ordinateur : rien n'est transmis.
+
+  ▸ NOTES : EFFACER, ANNULER, SUPPRIMER
+    Trois boutons sous la zone de saisie permettent de vider le texte,
+    d'annuler cet effacement, ou de supprimer définitivement la note.
+
+  ▸ ACTUALITÉS ÉLARGIES ET CRYPTO ISOLÉ
+    Nouvelles sources : Le Monde, Le Figaro, Le Revenu, CNBC, BBC
+    Business, MarketWatch, Seeking Alpha, OilPrice, Google News.
+    Les cryptomonnaies disposent de leurs propres sources (Cointelegraph,
+    CoinDesk, Decrypt, Cryptoast, Journal du Coin) et restent STRICTEMENT
+    confinées à l'onglet Crypto : elles n'apparaissent jamais dans
+    « Tout », ni mélangées au Forex, à la Macro ou aux Matières premières.
+
+  ▸ ALERTES SONORES
+    Trois sons DIFFÉRENTS, reconnaissables sans regarder l'écran :
+      · carillon montant  → une statistique vient d'être publiée
+      · double bip sec    → une dépêche est arrivée dans le fil
+      · arpège doux       → votre coach IA a laissé un message
+    Un bouton « 🔊 Son » en haut à droite les coupe ou les rallume, et
+    votre choix est mémorisé. Les sons sont volontairement placés dans
+    les fréquences aiguës pour rester audibles en séance, même à volume
+    modéré. Réserve honnête : si votre Mac est en sourdine matérielle,
+    aucune page web ne peut produire de son.
+
+  ▸ PROFESSEUR IA DANS ÉDUCATION & MACRO
+    Sous chaque cours, un professeur particulier vous réexplique la
+    notion. Deux modes au choix, d'un simple clic :
+      · 😊 FACILE     → analogies du quotidien, zéro jargon
+      · 🎯 TECHNIQUE  → mécanismes, canaux de transmission, lecture trader
+    Chaque explication est illustrée par un SCHÉMA dessiné dans
+    l'application, et complétée par un exemple chiffré réaliste. Un
+    bouton permet d'enchaîner sur un autre cours du même thème.
+    Comme le reste : aucun compte, aucune clé, fonctionne hors ligne.
+
+  ▸ CALENDRIER : DATES CORRIGÉES
+    Un défaut de lecture plaçait TOUS les événements de la source
+    secondaire à la date du jour : le NFP du 7 août apparaissait donc au
+    29 juillet. C'est corrigé, et le calendrier couvre désormais deux
+    semaines au lieu d'une.
+
+  ▸ CALENDRIER : EN-TÊTE FIXE, FILTRES ET DÉFILEMENT
+    La ligne DATE | HEURE | DEVISE | IMPACT | ÉVÉNEMENT | ACTUEL | PRÉVU |
+    PRÉCÉDENT reste affichée pendant tout le défilement. Une barre de
+    défilement visible a été ajoutée, ainsi que des filtres par devise,
+    par période et par recherche libre.
+
+  ▸ CALENDRIER : CHOIX DE LA SOURCE
+    Un sélecteur « Natif / Myfxbook » permet d'afficher le widget
+    Myfxbook. Note honnête : Myfxbook interdit techniquement l'affichage
+    dans une autre page (en-tête « SAMEORIGIN ») et peut opposer un
+    contrôle de sécurité. Si la zone reste vide, revenez sur « Natif » :
+    ce calendrier est recoupé entre DEUX sources professionnelles et
+    donne en plus l'analyse de l'agent IA au clic.
+
+  ▸ MT5 : STOP LOSS ET TAKE PROFIT ENFIN REMONTÉS
+    Les niveaux n'étaient lus que sur l'ordre d'entrée : un stop déplacé
+    en cours de trade, ou porté par le deal, était perdu. La lecture se
+    fait maintenant en quatre passes, y compris le cas où la position a
+    été fermée PAR le stop ou PAR l'objectif.
+
+  ▸ MT5 : TÉMOIN LUMINEUX RÉPARÉ
+    La LED de la section CONNEXION testait une propriété inexistante et
+    restait donc toujours éteinte. Elle s'allume désormais en vert
+    pulsant dès que la synchronisation est active.
+
+  ▸ CALENDRIER ÉCONOMIQUE FIABILISÉ
+    Les chiffres proviennent maintenant de DEUX sources professionnelles
+    croisées (ForexFactory et TradingEconomics). La colonne ACTUEL se
+    remplit dès la publication : elle est vérifiée toutes les 20 secondes
+    au lieu de 90. Si l'une des sources tombe en panne, l'autre prend le
+    relais SANS jamais figer les chiffres.
+
+  ▸ VOYANTS LUMINEUX À LA PLACE DES COMPTEURS
+    Plus aucun nombre dans le menu de gauche. MT5 Sync affiche une LED
+    verte pulsante quand la synchronisation tourne. Le Journal affiche
+    une pastille « Mise à jour » qui disparaît dès que vous l'ouvrez.
+
+  ▸ QUIZ DYNAMIQUE (Éducation & Macro)
+    Fini les questions toujours identiques. Chaque questionnaire est
+    fabriqué à la volée à partir des 154 cours : mises en situation
+    réelles sur l'inflation, les taux, la politique monétaire et la
+    gestion du risque. Deux sessions ne se ressemblent jamais.
+
+  ▸ ACTUALITÉS ÉLARGIES
+    Investing et FinancialJuice sont complétés par ForexFactory,
+    ZoneBourse et Baha, orientés Forex, matières premières et indices.
+    La purge automatique (FIFO) reste active en français et en anglais.
+
+  ▸ AGENT IA — VEILLE INTERNET AUTONOME
+    L'agent va CHERCHER l'information tout seul, toutes les 3 minutes,
+    en passant par le moteur de données déjà installé. Il vous prévient
+    quand un chiffre important vient de sortir sur vos devises, quand une
+    annonce majeure approche, ou quand la foule est déséquilibrée.
+    Rien à régler : ni compte, ni clé, ni abonnement. Moteur fermé ?
+    L'agent le voit et se met en veille, sans message d'erreur.
+
+  ▸ COACH DE DISCIPLINE DANS LE JOURNAL
+    En haut du Journal, un bandeau note votre discipline sur 100 et liste
+    ce qui cloche : trades sans stop, sans objectif, trading de revanche,
+    FOMO, taille anormale, ratio rendement/risque inférieur à 1, trades
+    non notés. Chaque point est assorti d'un conseil concret, et les
+    trades fautifs sont marqués d'un ⚠️ dans le tableau.
+
+  ▸ AGENT IA AUTONOME — sans compte, sans clé, sans Internet obligatoire
+    • Dans le calendrier : cliquez sur une annonce, l'IA explique son
+      impact et donne un biais clair — ACHETEUR, VENDEUR ou NEUTRE.
+      Tant que le chiffre n'est pas publié, elle le dit franchement
+      plutôt que d'inventer une direction.
+    • Dans « Notes & Psycho » : un coach vous laisse de lui-même des
+      conseils de discipline et des briefs sur vos paires favorites,
+      même si vous n'écrivez rien. Une pastille violette vous prévient.
+
+
+───────────────────────────────────────────────────────────────────────────
+  AVANT DE COMMENCER
+───────────────────────────────────────────────────────────────────────────
+
+  1. DÉCOMPRESSEZ l'archive ZIP.
+
+     ▸ Mac     : double-cliquez sur le fichier .zip
+     ▸ Windows : clic droit → « Extraire tout »
+
+     Travaillez ensuite DANS le dossier obtenu. Ne lancez jamais les
+     fichiers directement depuis l'intérieur du .zip : rien ne fonctionnera.
+
+  2. GARDEZ TOUS LES FICHIERS ENSEMBLE dans ce même dossier.
+     Vous pouvez déplacer le dossier entier où vous voulez (Bureau,
+     Documents…), mais ne séparez pas son contenu.
+
+
+───────────────────────────────────────────────────────────────────────────
+  DÉMARRAGE — macOS
+───────────────────────────────────────────────────────────────────────────
+
+  Double-cliquez sur   1-START-MAC.command
+
+  Une fenêtre noire s'ouvre : c'est normal, c'est le moteur de données.
+  Votre navigateur s'ouvre ensuite tout seul sur OmniTrade Hub.
+
+  ⚠️ LAISSEZ LA FENÊTRE NOIRE OUVERTE pendant toute votre session.
+     Elle alimente les actualités, le calendrier et le sentiment.
+     Pour tout arrêter : fermez simplement cette fenêtre.
+
+  ▸ Si macOS affiche « privilèges d'accès insuffisants » :
+       vous avez probablement lancé le fichier depuis l'intérieur du .zip.
+       Décompressez d'abord l'archive (voir plus haut).
+
+
+───────────────────────────────────────────────────────────────────────────
+  DÉMARRAGE — Windows
+───────────────────────────────────────────────────────────────────────────
+
+  Double-cliquez sur   1-START-WINDOWS.bat
+
+  Une fenêtre noire s'ouvre, puis votre navigateur affiche OmniTrade Hub.
+
+  ⚠️ LAISSEZ LA FENÊTRE OUVERTE pendant votre session.
+
+  ▸ Si Windows SmartScreen s'interpose :
+       « Informations complémentaires » → « Exécuter quand même »
+
+
+───────────────────────────────────────────────────────────────────────────
+  CE QUE VOUS OBTENEZ IMMÉDIATEMENT
+───────────────────────────────────────────────────────────────────────────
+
+  Sans aucune configuration, dès le premier lancement :
+
+    📊  Journal de trading complet
+        Saisie manuelle, import CSV, statistiques, courbe de capitaux,
+        analyse par session, par marché et par jour.
+
+    🌍  Market Hub — données de marché en direct
+        • Sessions Sydney / Tokyo / Londres / New York, avec voyants
+          et compte à rebours d'ouverture-fermeture
+        • Calendrier économique de la semaine, en français ou en anglais,
+          avec valeurs Actuel / Prévu / Précédent et filtres d'impact
+        • Chronomètre vers la prochaine annonce à fort impact
+        • Sentiment réel des traders : Forex, or, pétrole, indices
+        • Fil d'actualités Forex / Matières premières / Macro / Indices
+
+    🎓  Éducation & Macro — 154 cours intégrés
+        Macroéconomie, microéconomie, banques centrales, indicateurs.
+        Entièrement embarqués : consultables même sans Internet.
+
+    🎨  Confort
+        Thème sombre, clair ou automatique selon l'heure.
+        Interface en français ou en anglais, changement instantané.
+
+
+───────────────────────────────────────────────────────────────────────────
+  CONNECTER METATRADER 5 (facultatif)
+───────────────────────────────────────────────────────────────────────────
+
+  OmniTrade Hub fonctionne parfaitement SANS MetaTrader. Cette étape sert
+  uniquement à importer automatiquement vos trades.
+
+  ▸ Sur WINDOWS
+    Ouvrez MetaTrader 5 et connectez-vous à votre compte.
+    Dans MT5 : Outils → Options → Expert Advisors →
+    cochez « Autoriser le trading algorithmique ».
+    C'est fait : vos trades remontent tout seuls.
+
+  ▸ Sur MAC
+    MetaTrader 5 fonctionne sous Wine sur Mac, il faut donc installer
+    le petit programme fourni :
+
+      1. Ouvrez MetaTrader 5
+      2. Menu Outils → MetaQuotes Language Editor
+      3. Fichier → Nouveau → Expert Advisor → nommez-le OmniTradeExport
+      4. Effacez tout, collez le contenu de 2-OmniTradeExport.mq5
+      5. Compilez avec la touche F7
+      6. Retour dans MT5 : ouvrez un graphique et glissez OmniTradeExport
+         dessus depuis le Navigateur
+      7. Cochez « Autoriser le trading algorithmique » → OK
+      8. Un petit visage souriant apparaît en haut du graphique
+
+    Il ne passe AUCUN ordre : il lit seulement votre historique.
+
+
+───────────────────────────────────────────────────────────────────────────
+  EN CAS DE PROBLÈME
+───────────────────────────────────────────────────────────────────────────
+
+  « Les actualités ne s'affichent pas »
+      La fenêtre noire est-elle toujours ouverte ? C'est elle qui
+      récupère les données. Relancez 1-START-MAC.command (ou .bat).
+
+  « Python est nécessaire »
+      Vous utilisez la version non compilée. Deux options :
+        • demandez la version compilée à votre fournisseur ;
+        • ou installez Python en 2 minutes :
+            Mac     → https://www.python.org/downloads/macos/
+            Windows → https://www.python.org/downloads/windows/
+                      (COCHEZ « Add python.exe to PATH »)
+
+      ⚠️ Sur Mac, si le système propose les « Outils de ligne de commande
+         Xcode » (plusieurs Go), cliquez sur ANNULER. C'est inutile ici.
+
+      Même sans Python, le journal, les statistiques et les 154 cours
+      fonctionnent normalement.
+
+  « Le port est déjà utilisé »
+      Une session précédente tourne encore. Le lanceur la ferme
+      automatiquement ; si le message persiste, redémarrez la machine.
+
+  « Mon compte propfirm s'affiche en DÉMO »
+      Normal côté MetaTrader : les propfirms opèrent sur des serveurs
+      déclarés « démo » même quand le compte est financé. OmniTrade Hub le
+      corrige via le nom du serveur et son questionnaire de vérification.
+
+
+───────────────────────────────────────────────────────────────────────────
+  VOS DONNÉES
+───────────────────────────────────────────────────────────────────────────
+
+  • Tout reste sur VOTRE ordinateur, dans votre navigateur.
+  • Le moteur écoute uniquement en local (127.0.0.1) : rien n'est
+    accessible depuis l'extérieur.
+  • Il est en LECTURE SEULE sur MetaTrader : il ne peut ni ouvrir, ni
+    modifier, ni fermer une position.
+  • Il ne connaît pas votre mot de passe MT5.
+  • La sauvegarde Cloud est facultative et désactivée par défaut.
+
+  Pensez à exporter régulièrement votre journal :
+  onglet « Import / Export » → Exporter.
+
+
+───────────────────────────────────────────────────────────────────────────
+  CONTENU DU DOSSIER
+───────────────────────────────────────────────────────────────────────────
+
+  1-START-MAC.command / 1-START-WINDOWS.bat   ← CE QUE VOUS DOUBLE-CLIQUEZ
+  omnitrade-vXX.html                     l'application
+  mt5_bridge.py                           le moteur de données
+  bin/  ou  OmniTrade Hub Bridge.app         moteur compilé (si fourni)
+  2-OmniTradeExport.mq5                    programme pour MetaTrader
+  LISEZ-MOI.txt                           ce document
+
+═══════════════════════════════════════════════════════════════════════════

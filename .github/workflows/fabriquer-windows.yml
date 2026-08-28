@@ -1,0 +1,174 @@
+name: Fabriquer l'installateur Windows
+
+# ── Comment l'utiliser ──────────────────────────────────────────────────────
+#  1. Poussez ce dossier dans un dépôt GitHub (le dossier racine du dépôt
+#     doit contenir : 9-moteur-de-donnees.py, 9-licence.py, public_key.txt,
+#     omnitrade-v*.html, 2-OmniTradeExport.mq5, 1-START-WINDOWS.bat).
+#  2. Onglet « Actions » de GitHub → workflow « Fabriquer l'installateur
+#     Windows » → « Run workflow ».
+#  3. Quelques minutes plus tard : artéfact « installateur-windows » avec
+#     OmniTradeHub-Setup-<version>.exe prêt à distribuer.
+#
+#  Alternative « tag » : pousser un tag v1.0.0 déclenche le build tout seul.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (ex : 1.0.0) — vide : numérique du HTML"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Installeur Windows (.exe)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      VER: ${{ inputs.version }}
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Nettoyage
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force build, dist, .venv-build, OmniTradeHub-Windows-PRET -ErrorAction SilentlyContinue
+          Remove-Item -Force *.spec, build-log.txt -ErrorAction SilentlyContinue
+
+      - name: Fichier source du HTML
+        id: html
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem "omnitrade-v*.html" |
+            Where-Object { $_.Name -notmatch 'pre-refactor|backup|copie|sauvegarde|ancien|old' } |
+            ForEach-Object {
+              if ($_.BaseName -match 'v([0-9]+)') { [PSCustomObject]@{ Name = $_.Name; N = [int]$matches[1] } }
+            } |
+            Sort-Object N -Descending |
+            Select-Object -First 1 -ExpandProperty Name
+          if (-not $app) { throw "Aucun omnitrade-v*.html trouvé" }
+          "APP=$app" | Out-File $env:GITHUB_OUTPUT
+
+      - name: Dépendances
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip wheel
+          python -m pip install "pyinstaller>=6.0" flask flask-cors certifi
+
+      - name: Compilation PyInstaller
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --name OmniTradeBridge --console --noupx `
+            --hidden-import flask --hidden-import flask_cors `
+            --hidden-import werkzeug --hidden-import werkzeug.serving `
+            --hidden-import jinja2 --hidden-import itsdangerous `
+            --hidden-import click --hidden-import blinker `
+            --hidden-import license_core `
+            --hidden-import certifi --collect-data certifi `
+            --hidden-import concurrent.futures --hidden-import concurrent.futures.thread `
+            --hidden-import ssl --hidden-import _ssl `
+            --exclude-module tkinter --exclude-module numpy --exclude-module pandas `
+            --exclude-module matplotlib --exclude-module PIL --exclude-module pytest `
+            --add-data "$env:APP;." `
+            --add-data "9-licence.py;." `
+            --add-data "public_key.txt;." `
+            9-moteur-de-donnees.py 2>&1 | Tee-Object build-log.txt
+          if (-not (Test-Path "dist\OmniTradeBridge\OmniTradeBridge.exe")) { throw "Binaire absent" }
+
+      - name: Vérification du binaire
+        shell: pwsh
+        run: |
+          & ".\dist\OmniTradeBridge\OmniTradeBridge.exe" --list-dirs --no-keep-open
+          if ($LASTEXITCODE -ne 0) { throw "--list-dirs a échoué" }
+          & ".\dist\OmniTradeBridge\OmniTradeBridge.exe" --selftest-ssl --no-keep-open
+          if ($LASTEXITCODE -ne 0) { throw "HTTPS (certifi) a échoué" }
+
+      - name: Normalisation du HTML (_internal\omnitrade-v21.html)
+        shell: pwsh
+        run: |
+          $int = "dist\OmniTradeBridge\_internal"
+          if (-not (Test-Path $int)) { $int = "dist\OmniTradeBridge" }
+          Copy-Item $env:APP "$int\omnitrade-v21.html" -Force
+
+      - name: Assemblage du paquet
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "OmniTradeHub-Windows-PRET" | Out-Null
+          Copy-Item -Recurse "dist\OmniTradeBridge" "OmniTradeHub-Windows-PRET\bin"
+          foreach ($f in @($env:APP, "9-moteur-de-donnees.py", "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat")) {
+            if (Test-Path $f) { Copy-Item $f "OmniTradeHub-Windows-PRET\" -Force }
+          }
+          @("private_key*", "GENERATEUR*", "groq.key", "openrouter.key") | ForEach-Object {
+            Get-ChildItem "OmniTradeHub-Windows-PRET" -Recurse -Filter $_ -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+          }
+          Remove-Item -Recurse -Force "OmniTradeHub-Windows-PRET\oth_admin" -ErrorAction SilentlyContinue
+
+      - name: Installation Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+
+      - name: Compilation de l'installeur
+        id: setup
+        shell: pwsh
+        run: |
+          $htmlName = $env:APP
+          $ver = if ("$env:VER" -ne "") { "$env:VER" } else { if ($htmlName -match 'v([0-9]+)') { $matches[1] } else { "1" } }
+          $iss = @(
+            '[Setup]',
+            'AppName=OmniTrade Hub',
+            "AppVersion=$ver",
+            'AppPublisher=OmniTrade',
+            'DefaultDirName={autopf}\OmniTradeHub',
+            'DefaultGroupName=OmniTrade Hub',
+            'DisableProgramGroupPage=yes',
+            'OutputDir=.',
+            "OutputBaseFilename=OmniTradeHub-Setup-$ver",
+            'Compression=lzma2',
+            'SolidCompression=yes',
+            'PrivilegesRequired=lowest',
+            'ArchitecturesAllowed=x64compatible',
+            'ArchitecturesInstallIn64BitMode=x64compatible',
+            '[Tasks]',
+            'Name: desktopicon; Description: Créer un raccourci sur le Bureau; GroupDescription: Raccourcis:',
+            '[Files]',
+            'Source: "OmniTradeHub-Windows-PRET\*"; DestDir: {app}; Flags: recursesubdirs ignoreversion; Permissions: users-modify',
+            '[Icons]',
+            'Name: "{group}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"',
+            'Name: "{autodesktop}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"; Tasks: desktopicon',
+            '[Run]',
+            'Filename: "{app}\1-START-WINDOWS.bat"; Description: Lancer OmniTrade Hub; Flags: nowait postinstall skipifsilent'
+          )
+          Set-Content -Path "OmniTradeHub-installateur.iss" -Value $iss -Encoding UTF8
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "OmniTradeHub-installateur.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Échec Inno Setup" }
+          $exe = "OmniTradeHub-Setup-$ver.exe"
+          if (-not (Test-Path $exe)) { throw "Installeur absent" }
+          "SETUP_EXE=$exe" | Out-File $env:GITHUB_OUTPUT
+
+      - name: Archive ZIP de secours
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "OmniTradeHub-Windows-PRET\*" -DestinationPath "OmniTradeHub-Windows-PRET.zip" -Force
+
+      - name: Artéfacts à télécharger
+        uses: actions/upload-artifact@v4
+        with:
+          name: installateur-windows
+          path: |
+            OmniTradeHub-Setup-*.exe
+            OmniTradeHub-Windows-PRET.zip
+          if-no-files-found: error

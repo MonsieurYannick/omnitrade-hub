@@ -1,0 +1,12 @@
+# Fichier de configuration Supabase CLI — commandes de déploiement (voir LISEZ-MOI) :
+#   supabase functions deploy oth-activate --no-verify-jwt
+#   supabase functions deploy oth-issue     --no-verify-jwt
+#
+# (généré pour l'outil d'activation OmniTradeHub)
+project_id = "omnitrade"
+
+[functions.oth-activate]
+verify_jwt = false
+
+[functions.oth-issue]
+verify_jwt = false
