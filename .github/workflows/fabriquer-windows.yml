@@ -132,6 +132,8 @@ jobs:
       - name: Compilation de l'installeur
         id: setup
         shell: pwsh
+        env:
+          APP: ${{ steps.html.outputs.APP }}
         run: |
           $htmlName = $env:APP
           $ver = if ("$env:VER" -ne "") { "$env:VER" } else { if ($htmlName -match 'v([0-9]+)') { $matches[1] } else { "1" } }
