@@ -355,16 +355,44 @@ const G5 = page(band(5, 'Sauvegardes et synchronisation MetaTrader 5', 'cloud ·
   <h2 class="newpage">3. Synchroniser vos trades MetaTrader 5</h2>
   <p>La page <b>MT5</b> connecte OmniTrade Hub à votre terminal MetaTrader 5 pour importer
   automatiquement vos ordres, gains et pertes dans le journal.</p>
+  <div class="note"><b>Comment ça marche ?</b> Il n'y a aucune connexion entre MetaTrader et le pont.
+  Un petit <b>module</b> (un « Expert Advisor ») tourne <b>dans</b> MetaTrader et <b>écrit des fichiers</b>
+  (compte, historique, positions) ; le pont les <b>lit</b>. Le module ne place <b>jamais</b> d'ordre :
+  il se contente de lire votre historique. Rien ne sort de votre ordinateur.</div>
+
+  <h3>A. Sur Windows (simple)</h3>
   <ol>
-    <li>Ouvrez MetaTrader 5 sur le même ordinateur et connectez-vous au broker.</li>
-    <li>Dans OmniTrade Hub → <b>MT5</b>, renseignez les informations de votre compte : <b>login</b>,
-      <b>mot de passe (investisseur de préférence)</b>, et <b>serveur du broker</b> (ex. <code>ICMarkets-Demo01</code>).</li>
+    <li>Ouvrez MetaTrader 5 et connectez-vous au broker.</li>
+    <li>Dans OmniTrade Hub → <b>MT5</b>, renseignez <b>login</b>, <b>mot de passe (investisseur de préférence)</b>
+      et <b>serveur du broker</b> (ex. <code>ICMarkets-Demo01</code>).</li>
     <li>Cliquez <b>Se connecter à MT5</b> : la synchronisation démarre (le pont utilise le terminal pour
       ne jamais exposer votre mot de passe au navigateur).</li>
+    <li>Activez l'algorithme : <b>Outils → Options → Expert Advisors → « Autoriser le trading algorithmique »</b>.</li>
+  </ol>
+  <div class="tip">Sur Windows, rien à installer de plus : le module est inclus.</div>
+
+  <h3>B. Sur Mac : installer le petit module (5 minutes)</h3>
+  <p>MetaTrader 5 tourne sous Wine sur Mac, on installe donc le module fourni
+  (<code>2-OmniTradeExport.mq5</code>, livré avec OmniTrade Hub).</p>
+  <ol>
+    <li>Ouvrez MetaTrader 5 et connectez-vous au broker.</li>
+    <li>Menu <b>Outils → MetaQuotes Language Editor</b> (ou <b>F4</b>).</li>
+    <li><b>Fichier → Nouveau → Expert Advisor</b> → nommez-le <code>OmniTradeExport</code> → <b>Suivant → Terminer</b>.</li>
+    <li>Effacez tout le code affiché, <b>collez</b> le contenu de <code>2-OmniTradeExport.mq5</code>, puis <b>Compilez (F7)</b>.</li>
+    <li>Retour dans MetaTrader : ouvrez un <b>graphique</b> (n'importe quelle paire), et glissez
+      <code>OmniTradeExport</code> dessus depuis le panneau <b>Navigateur</b>.</li>
+    <li>Cochez <b>« Autoriser le trading algorithmique »</b> → <b>OK</b>. Un petit <b>visage souriant</b>
+      apparaît en haut du graphique.</li>
+    <li>Dans OmniTrade Hub → <b>MT5</b>, saisissez <b>login</b> + <b>serveur</b>, puis <b>Se connecter à MT5</b>.</li>
   </ol>
   ${img('05-mt5.png', 'Page MT5 : connexion au compte broker (login, mot de passe, serveur) et espace de synchronisation.', 'max-height:20cm;width:auto;margin:0 auto;display:block;')}
+  <div class="warn">Le module <b>ne passe aucun ordre</b> : il lit seulement votre historique (compte, trades,
+  positions) et l'écrit sur disque. Laissez le graphique avec le visage souriant <b>ouvert</b>.</div>
+
+  <h3>C. Dans les deux cas</h3>
   <ul>
-    <li>Vous pouvez lire l'app <b>sans MetaTrader</b> : seule la sync des ordres en a besoin.</li>
+    <li>Laissez la fenêtre noire (le pont) <b>ouverte</b> : c'est elle qui lit les fichiers.</li>
+    <li>L'app reste utilisable <b>sans MetaTrader</b> : seule la sync des ordres en a besoin.</li>
     <li>Fermez MetaTrader le temps d'une pause ? La sync reprend au prochain lancement.</li>
   </ul>
 
