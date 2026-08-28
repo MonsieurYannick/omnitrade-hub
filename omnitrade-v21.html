@@ -13510,9 +13510,12 @@ async function licActivateCall(action, code, email, machine_id) {
   const r = await fetch(SUPABASE_URL + '/functions/v1/oth-activate', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'apikey': SUPABASE_ANON_KEY
+      /* POST « simple » : content-type text/plain et AUCUN header non-simple
+         (pas de Authorization ni apikey) → le navigateur n'envoie pas de
+         preflight OPTIONS. Or Supabase Edge renvoie un 500 sur les préflight
+         OPTIONS, ce qui bloquait le vrai POST (erreur « connexion Internet »).
+         La fonction est publique (verify_jwt=false) : aucune clé requise. */
+      'Content-Type': 'text/plain;charset=UTF-8'
     },
     body: JSON.stringify({ code, email, machine_id, action })
   });

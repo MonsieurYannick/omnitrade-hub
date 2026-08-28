@@ -26,7 +26,9 @@ import { makeLicense, normalizeMid, PLANS } from '../_shared/oth_core.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Max-Age': '86400',
 }
 
 function json(status: number, body: unknown): Response {
