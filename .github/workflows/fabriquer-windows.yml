@@ -72,6 +72,7 @@ jobs:
         shell: pwsh
         run: |
           python -m PyInstaller --clean --noconfirm --name OmniTradeBridge --console --noupx `
+            --icon "OmniTradeHub.ico" `
             --hidden-import flask --hidden-import flask_cors `
             --hidden-import werkzeug --hidden-import werkzeug.serving `
             --hidden-import jinja2 --hidden-import itsdangerous `
@@ -111,6 +112,7 @@ jobs:
           foreach ($f in @($env:APP, "9-moteur-de-donnees.py", "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat")) {
             if (Test-Path $f) { Copy-Item $f "OmniTradeHub-Windows-PRET\" -Force }
           }
+          if (Test-Path "OmniTradeHub.ico") { Copy-Item "OmniTradeHub.ico" "OmniTradeHub-Windows-PRET\" -Force }
           @("private_key*", "GENERATEUR*", "groq.key", "openrouter.key") | ForEach-Object {
             Get-ChildItem "OmniTradeHub-Windows-PRET" -Recurse -Filter $_ -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
           }
@@ -134,6 +136,8 @@ jobs:
             'AppPublisher=OmniTrade',
             'DefaultDirName={autopf}\OmniTradeHub',
             'DefaultGroupName=OmniTrade Hub',
+            'SetupIconFile=OmniTradeHub.ico',
+            'UninstallDisplayIcon={app}\bin\OmniTradeBridge.exe',
             'DisableProgramGroupPage=yes',
             'OutputDir=.',
             "OutputBaseFilename=OmniTradeHub-Setup-$ver",

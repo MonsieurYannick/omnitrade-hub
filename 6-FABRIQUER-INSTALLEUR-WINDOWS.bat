@@ -104,6 +104,7 @@ rem ── Compilation ───────────────────
 echo → Compilation en cours (2 à 5 minutes, soyez patient)…
 rmdir /s /q build dist 2>nul
 python -m PyInstaller --clean --noconfirm --name OmniTradeBridge --console --noupx ^
+  --icon "OmniTradeHub.ico" ^
   --hidden-import flask --hidden-import flask_cors ^
   --hidden-import werkzeug --hidden-import werkzeug.serving ^
   --hidden-import jinja2 --hidden-import itsdangerous ^
@@ -164,6 +165,7 @@ if not exist "1-START-WINDOWS.bat" (
   pause & exit /b 1
 )
 copy /y "1-START-WINDOWS.bat" "%OUT%\" >nul 2>&1
+if exist "OmniTradeHub.ico" copy /y "OmniTradeHub.ico" "%OUT%\" >nul 2>&1
 
 rem ── Aucun secret ne doit partir chez un client ──────────────────────────
 del /q "%OUT%\private_key*" "%OUT%\GENERATEUR*" "%OUT%\groq.key" "%OUT%\openrouter.key" 2>nul
@@ -197,6 +199,8 @@ if defined ISCC (
     echo AppPublisher=OmniTrade
     echo DefaultDirName={autopf}\OmniTradeHub
     echo DefaultGroupName=OmniTrade Hub
+    echo SetupIconFile=%CD%\OmniTradeHub.ico
+    echo UninstallDisplayIcon={app}\bin\OmniTradeBridge.exe
     echo DisableProgramGroupPage=yes
     echo OutputDir=.
     echo OutputBaseFilename=OmniTradeHub-Setup-%VER%

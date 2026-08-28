@@ -148,6 +148,7 @@ done
 [[ -f "Lancer OmniTrade Hub Bridge.command" ]] && \
   cp -f "Lancer OmniTrade Hub Bridge.command" "$RES/" 2>/dev/null
 [[ -f "0-LISEZ-MOI.txt" ]] && cp -f "0-LISEZ-MOI.txt" "$RES/" 2>/dev/null
+[[ -f "OmniTradeHub.icns" ]] && cp -f "OmniTradeHub.icns" "$RES/" 2>/dev/null
 
 # ── Info.plist ────────────────────────────────────────────────────────────
 VERSION=$(printf '%s' "$APP" | sed -E 's/^omnitrade-v([0-9]+).*/\1/')
@@ -159,6 +160,7 @@ cat > "$APPBUNDLE/Contents/Info.plist" <<EOF
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>fr</string>
   <key>CFBundleExecutable</key><string>OmniTradeHub</string>
+  <key>CFBundleIconFile</key><string>OmniTradeHub</string>
   <key>CFBundleIdentifier</key><string>com.omnitrade.hub</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>OmniTrade Hub</string>
