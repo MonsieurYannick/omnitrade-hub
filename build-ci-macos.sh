@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "══════════════════════════════════════════════════════════════"
-echo "   OmniTrade Hub — Fabrication du .dmG en CI (macOS)"
+echo "   OmniTrade Hub — Fabrication du .dmg en CI (macOS)"
 echo "══════════════════════════════════════════════════════════════"
 
 # ── Version ─────────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ echo "   ✓ le binaire fonctionne (SSL inclus)"
 # ── 3. Assemblage de OmniTradeHub.app ────────────────────────────────────────
 APPBUNDLE="OmniTradeHub.app"
 RES="$APPBUNDLE/Contents/Resources"
-echo "→ Assemblage de $APPBUNDLE…"
+echo "→ Assemblage de ${APPBUNDLE}…"
 rm -rf "$APPBUNDLE"
 mkdir -p "$APPBUNDLE/Contents/MacOS" "$RES"
 
