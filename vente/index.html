@@ -44,6 +44,10 @@
   .msg{margin-top:12px;font-size:13.5px;line-height:1.5;min-height:20px}
   .msg.ok{color:var(--ok)} .msg.err{color:var(--warn)}
   .note{color:var(--mut);font-size:12.5px;margin-top:10px;text-align:center}
+  .sub-title{font-size:16px;font-weight:800;margin:0 0 6px}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--bg)}
+  th,td{padding:10px 12px;text-align:left;border:1px solid var(--line)}
+  th{background:var(--card);font-weight:800}
   footer{margin-top:36px;color:var(--mut);font-size:12.5px;text-align:center;line-height:1.7}
 </style>
 </head>
@@ -85,6 +89,18 @@
   <p class="note">Votre e-mail est votre compte : le code d'achat s'active avec lui. Chaque code
   fonctionne sur un nombre limité d'appareils (indiqué sur la formule). Données traitées uniquement
   pour la commande.</p>
+
+  <h2 class="sub-title" style="margin-top:34px;">Télécharger l'application — quel fichier pour mon Mac ?</h2>
+  <table style="margin-top:10px;">
+    <tr><th>Votre machine</th><th>Fichier à télécharger</th></tr>
+    <tr><td><b>Mac Intel</b> (processeur Intel Core / Xeon)</td><td><code>OmniTradeHub-macOS-Intel.dmg</code></td></tr>
+    <tr><td><b>Mac Apple Silicon</b> (puce M1 / M2 / M3 / M4)</td><td><code>OmniTradeHub-macOS-AppleSilicon.dmg</code></td></tr>
+    <tr><td>PC Windows</td><td><code>OmniTradeHub-Setup-*.exe</code> (le plus récent)</td></tr>
+  </table>
+  <p class="note">Comment connaître votre type de Mac ? Menu <b></b> → <b>À propos de ce Mac</b> :
+  « <b>Puce</b> » = Apple Silicon · « <b>Processeur</b> » = Intel.
+  Télécharger la mauvaise version empêche le lancement : l'application vous indiquera alors
+  laquelle prendre.</p>
 
   <footer>
     OMNITRADE — Une question ? Contactez le vendeur<br>
