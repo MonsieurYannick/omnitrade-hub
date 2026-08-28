@@ -23,6 +23,13 @@ import os
 import sys
 import urllib.request
 
+# Certificats racines : certifi si présent, sinon les bundles système auto.
+try:
+    import certifi
+    os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = os.path.join(HERE, ".adm.json")
 
