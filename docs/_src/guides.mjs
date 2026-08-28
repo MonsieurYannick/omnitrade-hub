@@ -60,7 +60,7 @@ const band = (num, title, tag) => `
   <div class="band">
     <div class="logo">OmniTrade <span>Hub</span> — Guide n°${num}</div>
     <div class="sub">${title}</div>
-    <div class="meta">Guide client · v9.0 · ${tag}</div>
+    <div class="meta">Guide client · v9.0.4 · ${tag}</div>
   </div>`
 
 function page(bandHtml, body) {
@@ -113,6 +113,8 @@ const G1 = page(band(1, 'Installation sur Mac et Windows', 'prérequis · lancem
   <div class="note">Comment connaître son type de Mac ? Menu <b></b> (en haut à gauche)
   → <b>À propos de ce Mac</b> : « <b>Puce</b> » = Apple Silicon · « <b>Processeur</b> » = Intel.
   Prendre le mauvais fichier empêche le lancement : l'application vous dira alors lequel télécharger.</div>
+  <div class="tip">⚠️ Prenez la <b>dernière version</b> (le tag le plus en haut de la page « Releases »,
+  actuellement <b>v9.0.4</b>) : elle inclut la correction de l'activation des licences.</div>
 
   <h2>3. Installer sur Mac (2 minutes)</h2>
   <ol>
