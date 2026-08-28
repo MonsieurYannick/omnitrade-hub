@@ -1,10 +1,11 @@
 # ✈️ ACTIVATION AUTOMATIQUE — Guide d'installation (côté vendeur)
 
-Ce dossier transforme l'app en logiciel « à codes d'achat » : le client achète
-un code (`OTH-XXXXXXXX-XXXXXXXX`), le colle dans l'app, et l'app déverrouille
-la licence TOUTE SEULE, sans copier-coller de clé. C'est la version moderne du
-système de licence actuel (précisément : l'app génère la clé de licence
-signée exactement comme tes outils python, mais côté serveur).
+Ce dossier transforme l'app en logiciel « à codes d'achat + compte e-mail » :
+le client achète un code (`OTH-XXXXXXXX-XXXXXXXX`), saisit l'**e-mail de sa
+commande** et le code dans l'app, et l'app déverrouille la licence TOUTE SEULE,
+sans copier-coller de clé. La clé est signée côté serveur et liée à
+l'**identifiant LOGICIEL** de l'appareil (soft ID, stable à la réinstallation)
+et au nombre d'appareils autorisés.
 
 **Ce dossier contient :**
 
@@ -93,11 +94,14 @@ Envoie le code au client. Dans l'app, il colle le code → l'app appelle
 
 - **Le client ne peut RIEN inventer** : impossible de fabriquer une clé
   (signature Ed25519 vérifiée localement) ni de prolonger sa date (échéance
-  signée). Chaque achat = nb d'ordinateurs limité (`--max`), compté côté
-  serveur lors de l'activation.
-- **Depuis la v9, plus aucun blocage par code machine** : si l'empreinte
-  change (mise à jour Windows, réinstallation), la licence reste active.
-  Le code machine n'est plus qu'un compteur d'ordinateurs côté serveur.
+  signée). Chaque achat = nb d'appareils limité (`--max`), compté côté serveur
+  à l'activation.
+- **v9 : l'identifiant est LOGICIEL, plus matériel** : l'app génère un
+  identifiant stable (`~/.omnitrade/device.id`) qui survit à la réinstallation
+  et aux mises à jour. La licence reste donc active même si la machine change.
+- **L'e-mail est la clé du compte** : il doit correspondre à l'e-mail de
+  commande (`purchase_codes.customer`), et permet au client de voir/retirer
+  ses appareils lui-même (actions `list`/`remove`).
 - **La table est verrouillée** (RLS) : seul le serveur y touche.
 - **L'outil vendeur exige `OTH_ADMIN_KEY`** : seuls toi et le serveur de
   paiement (plus tard) peuvent créer des codes.

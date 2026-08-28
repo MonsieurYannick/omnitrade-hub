@@ -1404,11 +1404,25 @@ tr.jc-bad td:first-child{box-shadow:inset 3px 0 0 var(--r);}
   padding:10px 14px;margin-bottom:13px;border-radius:var(--r12);
   background:linear-gradient(135deg,rgba(212,165,116,.11),rgba(167,139,250,.07));
   border:1px solid rgba(212,165,116,.34);font-size:12.5px;color:var(--text2);}
+.lic-bar .btn{margin-left:auto;}
+/* Journal en lecture seule (édition gratuite) : saisie et édition masquées,
+   bandeau explicatif affiché à la place. */
+#pg-journal.lic-ro .jc-no-add{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+#pg-journal.lic-ro table button,
+#pg-journal.lic-ro .cell-ed{display:none !important;}
+/* Bandeau « réservé aux abonnés » du Market Hub (mode gratuit). */
+.mk-free-note{display:none;margin:8px 0 12px;padding:9px 12px;border-radius:10px;
+  font-size:12px;line-height:1.65;color:var(--text2);
+  background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.28);}
+.pg-market-free .mk-free-note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pg-market-free .mk-free-note .btn{margin-left:auto;}
+.pg-market-free #mk-sec-ses,.pg-market-free #mk-sec-sent,.pg-market-free #mk-sec-news{display:none;}
+.pg-market-free .mk-grid{display:block;}
+.pg-market-free .mk-cal-panel{margin:0;}
 .lic-bar.crit{background:linear-gradient(135deg,rgba(248,113,113,.13),rgba(212,165,116,.07));
   border-color:rgba(248,113,113,.45);}
 .lic-bar .lic-ic{font-size:15px;}
 .lic-bar b{color:var(--text);}
-.lic-bar .btn{margin-left:auto;}
 .lic-state{display:flex;align-items:center;gap:9px;padding:12px 15px;
   border-radius:var(--r12);font-size:13px;font-weight:700;margin-bottom:14px;}
 .lic-state.ok{background:var(--g2);border:1px solid rgba(52,211,153,.4);color:var(--g);}
@@ -2384,7 +2398,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
       <button class="snd-btn on" id="snd-btn" onclick="sndToggle()"
               title="Alertes sonores"><span class="snd-ico">🔊</span><span class="snd-lbl">Son</span></button>
       <button class="btn" onclick="G('import')">📥 Import CSV</button>
-      <button class="btn btn-p" onclick="openTM()">＋ Nouveau Trade</button>
+      <button class="btn btn-p" id="btn-new-trade" onclick="openTM()">＋ Nouveau Trade</button>
     </div>
   </div>
 
@@ -2429,8 +2443,12 @@ tr:hover td{background:rgba(52,211,153,.035);}
         <select class="f" id="jrs" onchange="rJ()"><option value="">Résultats</option><option>Win</option><option>Loss</option><option>Break-even</option></select>
         <select class="f" id="jdr" onchange="rJ()"><option value="">Direction</option><option>Long</option><option>Short</option></select>
         <select class="f" id="jss" onchange="rJ()"><option value="">Session</option><option>London</option><option>New York</option><option>Asian</option></select>
-        <button class="btn btn-p" onclick="openTM()">＋ Trade</button>
+        <button class="btn btn-p" id="btn-add-trade" onclick="openTM()">＋ Trade</button>
       </div>
+    </div>
+    <div class="jc-no-add mk-free-note" id="jc-free-note">
+      <span>🔒 <b data-i18n="j_free_lbl">Journal en lecture seule</b> — <span data-i18n="j_free_txt">en édition gratuite vous consultez vos trades MT5 (30 max) ; la saisie manuelle est réservée aux abonnés.</span></span>
+      <button class="btn btn-p" onclick="G('licence')">Activer une licence</button>
     </div>
     <div class="jc-box" id="jc-box" style="display:none;"></div>
     <div class="tw"><div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Paire</th><th>Mkt</th><th>Dir</th><th>Entrée</th><th>Sortie</th><th>SL</th><th>TP</th><th>Lots</th><th>RRR</th><th>MAE</th><th>MFE</th><th>PnL</th><th>Résultat</th><th>Setup</th><th>TF</th><th>Session</th><th>Émotion</th><th>Score</th><th>Tags</th><th>📷</th><th></th></tr></thead><tbody id="jtb"></tbody></table>
@@ -4251,8 +4269,12 @@ tr:hover td{background:rgba(52,211,153,.035);}
 
 </style>
 
+    <div class="mt5-panel mk-free-note">
+      <span>🔒 <b data-i18n="mk_free_lbl">Market Hub en édition gratuite</b> — <span data-i18n="mk_free_txt">seul le calendrier économique est accessible ; sessions, sentiment et actualités sont réservés aux abonnés.</span></span>
+      <button class="btn btn-p" onclick="G('licence')">Activer une licence</button>
+    </div>
     <!-- ── 1. SESSIONS DE TRADING ─────────────────────────────────────── -->
-    <div class="mt5-panel" style="margin-bottom:12px;">
+    <div class="mt5-panel" id="mk-sec-ses" style="margin-bottom:12px;">
       <div class="ch">
         <span class="ct" data-i18n="mk_sessions">Sessions de trading</span>
         <div class="mk-h-tools">
@@ -4269,7 +4291,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
 
     <div class="mk-grid">
       <!-- ── 2. CALENDRIER ÉCONOMIQUE ─────────────────────────────────── -->
-      <div class="mt5-panel mk-cal-panel">
+      <div class="mt5-panel mk-cal-panel" id="mk-sec-cal">
         <div class="ch">
           <span class="ct" data-i18n="mk_cal">Calendrier économique</span>
           <div class="mk-imp">
@@ -4304,7 +4326,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
       </div>
 
       <!-- ── 3. SENTIMENT ─────────────────────────────────────────────── -->
-      <div class="mt5-panel">
+      <div class="mt5-panel" id="mk-sec-sent">
         <div class="ch"><span class="ct" data-i18n="mk_sent">Sentiment du marché</span>
           <span class="mk-badge" id="mk-sent-badge"></span></div>
 
@@ -4318,7 +4340,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
     </div>
 
     <!-- ── 4. ACTUALITÉS ────────────────────────────────────────────────── -->
-    <div class="mt5-panel" style="margin-top:12px;">
+    <div class="mt5-panel" style="margin-top:12px;" id="mk-sec-news">
       <div class="ch">
         <span class="ct" data-i18n="mk_news">Actualités en direct</span>
         <div class="mk-imp">
@@ -4788,7 +4810,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'8.88',          // ← le seul endroit à modifier
+  version:'9.0',           // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -4939,8 +4961,8 @@ function licRestore(){
 }
 
 function G(page){
-  // Contrôle d'abonnement : les modules réservés affichent un écran
-  // explicatif au lieu de leur contenu. Le journal manuel reste ouvert.
+  // Contrôle d'abonnement : les modules réservés (édition gratuite)
+  // affichent un écran explicatif au lieu de leur contenu.
   if(typeof licAllows==='function'&&!licAllows(page)){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
     document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -5427,6 +5449,7 @@ function rJ(){
 // ═══════════════════════════════════════
 function openDp(id){
   const t=T.find(x=>x.id===id);if(!t)return;
+  const ro = (typeof licOuvert==='function' && !licOuvert());
   const pnl=parseFloat(t.pnl)||0;const rrr=gRRR(t);
   const rc=t.result==='Win'?'pp':t.result==='Loss'?'pn':'pb2';
   const mae=parseFloat(t.mae)||0;const mfe=parseFloat(t.mfe)||0;
@@ -5471,7 +5494,7 @@ function openDp(id){
         <div style="font-size:9px;color:var(--text3);margin-top:3px;">${maePct<50?'Bonne gestion du risque':'Sortie potentiellement trop tôt'}</div>
       </div>`:''}
     </div>`:''}
-    <div class="dps"><div class="dpst">🛠️ Correction des données — priment sur MT5</div>
+    ${!ro?`<div class="dps"><div class="dpst">🛠️ Correction des données — priment sur MT5</div>
       <div class="tfe">
         <div class="tfe-r"><label>Ticket / ID</label>
           <input type="text" value="${mt5Esc(t.ticket_id||'')}" placeholder="ex. 206927"
@@ -5528,8 +5551,12 @@ function openDp(id){
                  onchange="edTrade('${t.id}','score',this.value)"></div>
       </div>
       <div id="ed-ok" class="tfe-ok"></div>
-    </div>
-    <div class="dps"><div class="dpst">Stratégie</div>
+    </div>`:''}
+      ${ro?`<div class="dps" style="border:1px dashed rgba(248,113,113,.35);">
+        <div class="dpst" style="color:var(--r);font-size:11px;">🔒 Édition réservée aux abonnés</div>
+        <p style="font-size:11px;color:var(--text3);margin:0;">Saisie et correction manuelles des trades : réservées à la version payante.</p>
+      </div>`:''}
+        <div class="dps"><div class="dpst">Stratégie</div>
       <div class="dpr"><span class="drl">Setup</span><span class="drv">${t.setup||'—'}</span></div>
       <div class="dpr"><span class="drl">Confluences</span><span class="drv">${t.conf||'—'}</span></div>
       <div class="dpr"><span class="drl">Règle respectée</span><span class="drv" style="color:${t.rule==='Oui'?C.g:t.rule==='Non'?C.r:C.gold}">${t.rule||'—'}</span></div>
@@ -5542,7 +5569,7 @@ function openDp(id){
     ${t.shot?`<div class="dps"><div class="dpst">Screenshot</div><img src="${t.shot}" style="width:100%;border-radius:var(--r8);border:1px solid var(--border);cursor:pointer;" onclick="window.open(this.src,'_blank')"></div>`:''}
     ${t.notes?`<div class="dps"><div class="dpst">Notes d'analyse</div><div style="font-size:11px;color:var(--text2);line-height:1.7;background:var(--bg3);padding:11px;border-radius:var(--r8);border:1px solid var(--border);">${(t.notes||'').replace(/\n/g,'<br>')}</div></div>`:''}
     <div style="display:flex;gap:7px;margin-top:14px;">
-      <button class="btn btn-d" style="flex:1;" onclick="delT('${t.id}');closeDp();">🗑️ Supprimer</button>
+      ${ro?'':'<button class="btn btn-d" style="flex:1;" onclick="delT(\'' + t.id + '\');closeDp();">🗑️ Supprimer</button>'}
     </div>`;
   document.getElementById('dp').classList.add('on');
 }
@@ -6932,6 +6959,10 @@ const I18N={
     mk_c_all:'Tout', mk_c_com:'Matières premières',
     mk_nocat:'Aucune actualité dans cette catégorie pour le moment.',
     mk_edu:'Éducation & culture économique', mk_edu_cards:'Fiches', mk_edu_quiz:'Quiz',
+    j_free_lbl:'Journal en lecture seule',
+    j_free_txt:'en édition gratuite vous consultez vos trades MT5 (30 max) ; la saisie manuelle est réservée aux abonnés.',
+    mk_free_lbl:'Market Hub en édition gratuite',
+    mk_free_txt:'seul le calendrier économique est accessible ; sessions, sentiment et actualités sont réservés aux abonnés.',
     nt_update:'Mise à jour', nt_mt5_on:'Synchronisation MT5 active',
     cal_h_date:'Date', cal_f_cur:'Devises', cal_f_when:'Période',
     nt_ia:'Coach IA', cc_tab_cours:'📚 Cours', cc_tab_quiz:'🧠 Quiz dynamique',
@@ -6991,6 +7022,10 @@ const I18N={
     mk_c_all:'All', mk_c_com:'Commodities',
     mk_nocat:'No news in this category right now.',
     mk_edu:'Education & economic literacy', mk_edu_cards:'Cards', mk_edu_quiz:'Quiz',
+    j_free_lbl:'Journal read-only',
+    j_free_txt:'in the free edition you can view up to 30 MT5 trades; manual entry is for subscribers only.',
+    mk_free_lbl:'Market Hub free edition',
+    mk_free_txt:'only the economic calendar is available; sessions, sentiment and news are for subscribers only.',
     nt_update:'Update', nt_mt5_on:'MT5 sync active',
     cal_h_date:'Date', cal_f_cur:'Currencies', cal_f_when:'Period',
     nt_ia:'AI coach', cc_tab_cours:'📚 Courses', cc_tab_quiz:'🧠 Dynamic quiz',
@@ -7311,6 +7346,8 @@ function pfReset(){
 
 const SUPABASE_URL='https://qxrkdnkxpnmmxigjtrcb.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_BmL9G34dZTh0p1TU8LGjgQ_-1N3bHI1';
+/* Page de vente : remplacée quand la boutique est publiée (ex : GitHub Pages). */
+const BUY_URL='https://github.com/MonsieurYannick/omnitrade-hub/releases';
 const SB_TABLE='user_backups';
 const SB_CFG_KEY='zt3_sb_cfg', SB_LOG_KEY='zt3_sb_log';
 
@@ -8833,31 +8870,39 @@ function mt5Merge(rawTrades,{force=false,acct=null}={}){
       mt5.idx[key]={id:existing.id,hash:h};
       updated++;
     }else{
+      // v9 : en édition gratuite, une fois le plafond de 30 trades atteint,
+      // aucun nouveau trade n'est plus importé (la synchronisation demande
+      // elle-même l'abonnement avant de partir).
+      if(typeof licQuotaFull==='function' && licQuotaFull()){
+        capped++;
+        return;
+      }
       annApply(nt);          // ré-applique les annotations connues du ticket
       T.push(nt);
       mt5.idx[key]={id:nt.id,hash:mt5Hash(nt)};
       imported++;
     }
   });
-  return {imported,dup,updated};
+  return {imported,dup,updated,capped};
 }
 
 // ═══════════════════════════════════════
 // SYNCHRONISATION
 // ═══════════════════════════════════════
 async function mt5Sync(opts={}){
-  // ═══ VERROU D'ABONNEMENT ═══
-  // Le blocage de NAVIGATION ne suffisait pas : la synchronisation
-  // automatique et les appels directs contournaient le contrôle, et des
-  // trades MT5 étaient importés en mode gratuit (bug constaté).
-  // On refuse donc ici, au point d'entrée unique de toute synchronisation.
-  if(typeof licOuvert==='function' && !licOuvert()){
+  // ═══ PLAFOND ÉDITION GRATUITE (v9) ═══
+  // MT5 est désormais GRATUIT jusqu'à 30 trades synchronisés. Dès que le
+  // plafond est atteint, toute synchronisation est refusée jusqu'à
+  // l'abonnement (défense en profondeur : mt5Merge bloque aussi, même si
+  // un contournement appelait le pont directement).
+  if(typeof licOuvert==='function' && !licOuvert() &&
+     typeof licQuotaFull==='function' && licQuotaFull()){
     mt5StopAuto();
     mt5SetStatus('locked');
     if(!opts.silent){
       const en=(LANG==='en');
-      mt5Log(en?'MT5 Sync is reserved for subscribers — synchronisation blocked.'
-               :'MT5 Sync est réservé aux abonnés — synchronisation bloquée.','err');
+      mt5Log(en?'Free edition limit reached (30 MT5 trades) — subscribing unlocks unlimited sync.'
+               :'Limite de l\u2019édition gratuite atteinte (30 trades MT5) — l\u2019abonnement débloque la synchronisation illimitée.','err');
       if(typeof G==='function')G('licence');
     }
     return;
@@ -8907,6 +8952,15 @@ function mt5ApplyPayload(data,opts={}){
     mt5Alert(`✅ ${res.imported} nouveau(x) trade(s) importé(s) depuis MT5.`,'s');
   }else if(!opts.silent){
     mt5Alert(`ℹ️ Aucun nouveau trade. ${res.updated} mis à jour, ${res.dup} déjà présent(s).`,'i');
+  }
+  // Plafond gratuit atteint (défense en profondeur) : on informe et on coupe.
+  if(res.capped && typeof licOuvert==='function' && !licOuvert()){
+    const en=(LANG==='en');
+    const m=en?'Free edition limit reached (30 MT5 trades) — subscribing unlocks unlimited sync.'
+              :`Limite de l\u2019édition gratuite atteinte (30 trades MT5) — ${res.capped} trade(s) non importé(s). L\u2019abonnement débloque la synchronisation illimitée.`;
+    mt5Log(m,'err');
+    mt5Alert('🔒 '+mt5Esc(m),'e');
+    try{ mt5StopAuto(); mt5SetStatus('locked'); }catch(e){}
   }
 
   mt5RenderAll();
@@ -13249,14 +13303,11 @@ function pfOther(){
    LICENCE — contrôle d'accès côté application
    ---------------------------------------------------------------------------
    L'état de la licence est fourni par le PONT (mt5_bridge), seul composant
-   capable de lire l'identifiant matériel et de vérifier une signature
-   Ed25519. L'application ne fait qu'appliquer le verdict.
+   capable de lire l'identifiant logiciel (soft ID) et de vérifier une
+   signature Ed25519. L'application ne fait qu'appliquer le verdict.
 
-   Règles d'accès demandées :
-     • Réservé aux abonnés : MT5 Sync, Agents IA, Éducation & Macro,
-       Sauvegarde Cloud, Market Hub, Playbook.
-     • Toujours accessible : la saisie MANUELLE de trades, plafonnée à
-       10 trades tant qu'aucune licence valide n'est active.
+   La matrice gratuite/abonné est détaillée juste en dessous (LIC_FREE_MODULES,
+   LIC_LOCKED, LIC_FREE_TRADES) — décision du 28/08/2026, v9.
 
    Franchise assumée : une application distribuée en fichier local ne peut
    pas être rendue inviolable. Ce dispositif rend la fraude nettement plus
@@ -13264,29 +13315,38 @@ function pfOther(){
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════
-   APPLICATION OUVERTE — décision du 05/08/2026                    (v8.0)
+   ÉDITION GRATUITE LIMITÉE — décision du 28/08/2026              (v9.0)
    -----------------------------------------------------------------------
-   Le contrôle de licence dépendait du code machine, lui-même calculé par
-   le moteur Python. Trop de postes clients n'avaient pas Python installé,
-   ou tombaient sur le faux « python.exe » du Microsoft Store : le code ne
-   s'affichait pas, et l'utilisateur ne pouvait donc rien commander. Le
-   verrou empêchait de vendre au lieu de protéger.
+   Tous les modules sont de nouveau contrôlés, mais le gratuit garde une
+   vraie valeur : MT5 Sync (plafonnée à 30 trades), le calendrier économique
+   (dans Market Hub uniquement), les alertes et la watchlist.
 
-   Tout est désormais ouvert, SAUF la synchronisation MetaTrader 5, qui
-   reste réservée aux abonnés — c'est elle qui exige de toute façon le
-   moteur, donc Python.
+   Licence v9 : code d'achat + e-mail (compte), liés à l'identifiant
+   LOGICIEL de l'appareil (soft ID, stocké dans ~/.omnitrade/device.id et
+   généré par le moteur) — plus d'empreinte matérielle instable.
 
-   Le mécanisme n'est pas supprimé mais neutralisé : remettre un module
-   dans LIC_LOCKED suffit à le reverrouiller, sans réécrire une ligne.
+   Le mécanisme est unique : ajouter un module à LIC_LOCKED suffit à le
+   reverrouiller, sans réécrire une ligne.
    ═══════════════════════════════════════════════════════════════════════ */
-const LIC_FREE_TRADES = Infinity;   // journal illimité : plus de plafond
-const LIC_LOCKED = [];              // AUCUN module réservé : tout est ouvert
+
+/* Appareils (soft ID) autorisés en version gratuite. */
+const LIC_FREE_MODULES = ['mt5', 'journal', 'market', 'alertes', 'watchlist',
+                          'licence', 'support'];
+
+/* Modules réservés aux abonnés : tout le reste (liste exhaustive). */
+const LIC_LOCKED = ['dashboard', 'analytics', 'calendrier', 'playbook',
+                    'risque', 'rapport', 'objectifs', 'accountability',
+                    'session', 'notes', 'import', 'cloud',
+                    'edu', 'gold', 'cot', 'cb', 'articles', 'video'];
+
+/* Plafond de trades synchronisés (MT5) en version gratuite : 30. */
+const LIC_FREE_TRADES = 30;
 
 /* Interrupteur unique de l'abonnement.
-   À false, l'application entière est ouverte, MT5 Sync comprise.
-   Repasser cette valeur à true rétablit d'un coup tous les contrôles :
-   il suffit alors de replacer les modules voulus dans LIC_LOCKED. */
-const LIC_ABONNEMENT_ACTIF = false;
+   À true, tous les contrôles s'appliquent : les modules de LIC_LOCKED
+   sont masqués, MT5 est plafonné à LIC_FREE_TRADES, etc.
+   À false, l'application entière est ouverte. */
+const LIC_ABONNEMENT_ACTIF = true;
 
 /* Réponse unique à la question « ce poste a-t-il le droit ? ».
    Tous les contrôles passent désormais par cette fonction, au lieu de
@@ -13409,19 +13469,44 @@ async function licActivate() {
   if (again && keep) again.innerHTML = keep;
 }
 
-/* Activation AUTOMATIQUE : l'acheteur colle son code d'achat (OTH-…), l'app
-   appelle la fonction Supabase « oth-activate », qui émet une clé signée liée
-   à CE code machine, puis l'app la soumet au moteur local comme une clé
-   classique. Aucun copier-coller de clé pour le client. */
+/* Activation AUTOMATIQUE (v9) : code d'achat + e-mail (compte) + identifiant
+   LOGICIEL de l'appareil. Le serveur (oth-activate) émet une clé signée liée à
+   CET appareil et au compte e-mail. L'e-mail permet de voir/retirer ses
+   propres appareils. Aucun copier-coller de clé pour le client. */
+function licActivateGet() {
+  const code = (document.getElementById('lic-code') || {}).value || '';
+  const email = (document.getElementById('lic-email') || {}).value || '';
+  return { code: code.trim().toUpperCase(), email: email.trim().toLowerCase() };
+}
+
+async function licActivateCall(action, code, email, machine_id) {
+  const r = await fetch(SUPABASE_URL + '/functions/v1/oth-activate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'apikey': SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ code, email, machine_id, action })
+  });
+  return r.json().catch(() => null);
+}
+
 async function licCodeActivate() {
-  const inp = document.getElementById('lic-code');
   const out = document.getElementById('lic-code-msg');
   const en = (LANG === 'en');
-  const code = (inp ? inp.value : '').trim().toUpperCase();
+  const { code, email } = licActivateGet();
   if (!code) {
     if (out) out.innerHTML = '<div class="al al-e">' +
       (en ? 'Paste your purchase code (e.g. OTH-M5F3XQ2P-RTLK92U).'
           : 'Collez votre code d\u2019achat (ex : OTH-M5F3XQ2P-RTLK92U).') + '</div>';
+    return;
+  }
+  const reMail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!reMail.test(email)) {
+    if (out) out.innerHTML = '<div class="al al-e">' + (en
+      ? 'Enter the e-mail used at purchase (e.g. trader@mail.com).'
+      : 'Saisissez l\u2019e-mail utilisé lors de l\u2019achat (ex : trader@mail.com).') + '</div>';
     return;
   }
   const mid = (LIC.machineId || LIC.machine || '').toUpperCase();
@@ -13434,16 +13519,7 @@ async function licCodeActivate() {
   if (out) out.innerHTML = '<div class="al">' + (en ? 'Contacting the server…'
       : 'Connexion au serveur d\u2019activation…') + '</div>';
   try {
-    const r = await fetch(SUPABASE_URL + '/functions/v1/oth-activate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'apikey': SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ code, machine_id: mid })
-    });
-    const j = await r.json().catch(() => null);
+    const j = await licActivateCall('activate', code, email, mid);
     if (!j || !j.ok || !j.key) {
       const m = (j && j.msg_fr) || (en ? 'This purchase code was refused. Contact the seller.'
           : 'Ce code d\u2019achat a été refusé. Contactez le vendeur.');
@@ -13457,11 +13533,13 @@ async function licCodeActivate() {
     if (out) out.innerHTML = '<div class="al al-s">✅ ' + (en
         ? 'Server accepted your purchase code. Applying your licence…'
         : 'Code d\u2019achat accepté par le serveur. Application de la licence\u2026') + '</div>';
-    // licActivate() régénère la page (licRender) : on sauvegarde le code
-    // d'achat pour le réafficher — l'utilisateur ne doit jamais le retaper.
-    const savedCode = (inp ? inp.value : '') || code;
+    // licActivate() régénère la page (licRender) : on sauvegarde le code et
+    // l'e-mail pour les réafficher — l'utilisateur ne doit jamais les retaper.
+    const savedCode = code;
+    const savedEmail = email;
     await licActivate();
     const inp2 = document.getElementById('lic-code');
+    const em2 = document.getElementById('lic-email');
     const out2 = document.getElementById('lic-code-msg');
     if (inp2) {
       inp2.value = savedCode;
@@ -13469,6 +13547,7 @@ async function licCodeActivate() {
       inp2.focus();
       inp2.select();
     }
+    if (em2) em2.value = savedEmail;
     const okFinal = typeof LIC !== 'undefined' && LIC.valid;
     if (out2) out2.innerHTML = '<div class="al ' + (okFinal ? 'al-s' : 'al-w') + '">'
       + (okFinal ? '🔓 ' + (en ? 'Licence active — you can close this window now.'
@@ -13476,10 +13555,83 @@ async function licCodeActivate() {
                  : (en ? 'Your licence key was applied. Check the status above.'
                        : 'Votre clé a été appliquée. Vérifiez l\u2019état ci-dessus.'))
       + '</div>';
+    if (okFinal) licDevicesRefresh();
   } catch (e) {
     if (out) out.innerHTML = '<div class="al al-e">' + (en
       ? 'No internet connection. Check that you are online, then retry.'
       : 'Pas de connexion Internet. Vérifiez votre connexion puis réessayez.') + '</div>';
+  }
+}
+
+/** Liste les appareils associés au compte (code + e-mail). */
+async function licDevicesRefresh() {
+  const box = document.getElementById('lic-devices');
+  if (!box) return;
+  const en = (LANG === 'en');
+  const { code, email } = licActivateGet();
+  if (!code || !email) return;
+  box.innerHTML = '<div class="al">' + (en ? 'Loading your devices…'
+      : 'Chargement de vos appareils\u2026') + '</div>';
+  try {
+    const j = await licActivateCall('list', code, email, '');
+    if (!j || !j.ok) {
+      box.innerHTML = '<div class="al al-w">' + (en ? 'Unable to list devices.'
+          : 'Impossible de lister les appareils.') + '</div>';
+      return;
+    }
+    const devs = Array.isArray(j.devices) ? j.devices : [];
+    if (!devs.length) {
+      box.innerHTML = '<div class="al al-w">' + (en ? 'No device registered with this account yet.'
+          : 'Aucun appareil enregistré sur ce compte pour le moment.') + '</div>';
+      return;
+    }
+    box.innerHTML = '<div class="lic-lbl">' + (en ? 'Your devices' : 'Vos appareils') + ' — '
+      + devs.length + (en ? ' device(s) on this code' : ' appareil(s) sur ce code') + '</div>'
+      + devs.map(function (d) {
+        const isThis = (d.mid || '').toUpperCase() === ((LIC.machineId || '').toUpperCase());
+        return '<div class="lic-dev" style="display:flex;align-items:center;gap:9px;'
+          + 'padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-top:8px;'
+          + 'flex-wrap:wrap;">'
+          + '<span style="font-family:var(--mono);font-size:11px;' + (isThis ? 'color:var(--g);' : '') + '">'
+          + mkEsc(d.mid) + (isThis ? ' <b>· ' + (en ? 'this device' : 'cet appareil') + '</b>' : '') + '</span>'
+          + '<span style="font-size:10px;color:var(--text3);">' + mkEsc(d.plan || '') + ' · '
+          + (d.expires === 'never' ? (en ? 'unlimited' : 'illimité') : mkEsc(d.expires)) + '</span>'
+          + '<button class="btn btn-s btn-d" style="margin-left:auto;font-size:11px;" '
+          + 'onclick="licDeviceRemove(\'' + mkEsc(d.mid) + '\')">'
+          + (en ? 'Remove' : 'Retirer') + '</button>'
+          + '</div>';
+      }).join('')
+      + '<div id="lic-dev-msg" style="margin-top:8px;"></div>';
+  } catch (e) {
+    box.innerHTML = '<div class="al al-e">' + (en ? 'Technical error.'
+        : 'Erreur technique.') + '</div>';
+  }
+}
+
+/** Retire un appareil du compte pour libérer un emplacement (quota). */
+async function licDeviceRemove(mid) {
+  const out = document.getElementById('lic-dev-msg');
+  const en = (LANG === 'en');
+  const { code, email } = licActivateGet();
+  if (!code || !email || !mid) return;
+  if (!confirm(en
+    ? 'Remove this device from your account? It will stop working until reactivated.'
+    : 'Retirer cet appareil de votre compte ? Il cessera de fonctionner jusqu\u2019\u00e0 la r\u00e9activation.')) return;
+  if (out) out.innerHTML = '<div class="al">' + (en ? 'Removing…' : 'Suppression\u2026') + '</div>';
+  try {
+    const j = await licActivateCall('remove', code, email, mid);
+    if (!j || !j.ok) {
+      const m = (j && j.msg_fr) || (en ? 'Unable to remove this device.'
+          : 'Impossible de retirer cet appareil.');
+      if (out) out.innerHTML = '<div class="al al-e">❌ ' + mkEsc(m) + '</div>';
+      return;
+    }
+    if (out) out.innerHTML = '<div class="al al-s">✅ ' + (en ? 'Device removed.'
+        : 'Appareil retir\u00e9.') + '</div>';
+    licDevicesRefresh();
+  } catch (e) {
+    if (out) out.innerHTML = '<div class="al al-e">' + (en ? 'Technical error.'
+        : 'Erreur technique.') + '</div>';
   }
 }
 
@@ -13488,7 +13640,7 @@ function licReasonText(r) {
   const m = {
     signature: en ? 'Invalid key (wrong or altered).' : 'Clé invalide (falsifiée ou incorrecte).',
     expiree: en ? 'This licence has expired.' : 'Cette licence est expirée.',
-    machine: en ? 'This key was issued for another computer.' : 'Cette clé a été émise pour un autre ordinateur.',
+    machine: en ? 'This key was issued for another device (different software ID).' : 'Cette clé a été émise pour un autre appareil (identifiant logiciel différent).',
     format: en ? 'Unrecognised key format.' : 'Format de clé non reconnu.',
     tronquee: en ? 'Incomplete key — copy it entirely.' : 'Clé incomplète — recopiez-la en entier.',
     illisible: en ? 'Unreadable key.' : 'Clé illisible.',
@@ -13514,33 +13666,32 @@ function licAllows(page) {
   return LIC_LOCKED.indexOf(page) < 0;
 }
 
-/** Peut-on encore ajouter un trade manuel ? */
+/** Peut-on encore ajouter un trade MANUEL ?
+    v9 : la saisie manuelle est réservée aux abonnés (gratuit en lecture seule). */
 function licCanAddTrade() {
-  if (LIC.valid) return true;
-  const manual = (typeof T !== 'undefined' && Array.isArray(T))
-    ? T.filter(x => x && x.source !== 'MT5').length : 0;
-  return manual < LIC_FREE_TRADES;
+  if (licOuvert() || LIC.valid) return true;
+  return false;
 }
 
-/** Nombre de trades manuels restants en mode gratuit. */
+/** Nombre de trades (MT5) restants en mode gratuit, avant le plafond de 30. */
 function licTradesLeft() {
-  if (LIC.valid) return Infinity;
-  const manual = (typeof T !== 'undefined' && Array.isArray(T))
-    ? T.filter(x => x && x.source !== 'MT5').length : 0;
-  return Math.max(0, LIC_FREE_TRADES - manual);
+  if (licOuvert() || LIC.valid) return Infinity;
+  const n = (typeof T !== 'undefined' && Array.isArray(T))
+    ? T.filter(x => x && (x.source === 'MT5' || x.ticket_id)).length : 0;
+  return Math.max(0, LIC_FREE_TRADES - n);
+}
+
+/** Plafond de trades MT5 atteint en version gratuite ? */
+function licQuotaFull() {
+  if (licOuvert() || LIC.valid) return false;
+  return licTradesLeft() <= 0;
 }
 
 /** Grise les entrées de menu réservées et affiche le bandeau d'état. */
+let licHomeDone = false;
 function licApply() {
   const en = (LANG === 'en');
-  // MT5 : dès que la licence tombe, on coupe la synchronisation et on
-  // bascule le voyant au rouge, sans attendre une action du trader.
-  if (!licOuvert() && typeof mt5 !== 'undefined') {
-    try {
-      if (typeof mt5StopAuto === 'function') mt5StopAuto();
-      if (mt5.status !== 'locked' && typeof mt5SetStatus === 'function') mt5SetStatus('locked');
-    } catch (e) { }
-  }
+  const free = !licOuvert();
   // Un module redevenu accessible doit retrouver son contenu d'origine.
   if (LIC.valid && typeof licRestore === 'function') { try { licRestore(); } catch (e) { } }
   document.querySelectorAll('.ni[data-page]').forEach(n => {
@@ -13558,26 +13709,52 @@ function licApply() {
       pad.remove();
     }
   });
+  // Journal : lecture seule en mode gratuit (les boutons d'édition sont masqués).
+  const pj = document.getElementById('pg-journal');
+  if (pj) pj.classList.toggle('lic-ro', free);
+  // Saisie manuelle : boutons masqués en gratuit.
+  ['btn-add-trade', 'btn-new-trade'].forEach(function (id) {
+    const b = document.getElementById(id);
+    if (b) b.style.display = free ? 'none' : '';
+  });
+  const tb = document.getElementById('trade-btn');
+  if (tb) tb.style.display = free ? 'none' : '';
   const bar = document.getElementById('lic-bar');
   if (bar) {
     if (LIC.valid) {
       bar.style.display = 'none';
     } else {
-      // Tous les modules sont ouverts (v8.0) : plus de compte à rebours de
-      // trades, plus de bandeau anxiogène. On rappelle simplement que la
-      // synchronisation MetaTrader reste sur abonnement.
+      const left = licTradesLeft();
+      const full = typeof left === 'number' && left !== Infinity;
       bar.style.display = '';
       bar.className = 'lic-bar';
-      // Version entièrement ouverte : aucun module réservé, donc aucun
-      // bouton d'activation. Le bandeau ne sert plus qu'à informer.
-      bar.innerHTML = '<span class="lic-ic">✅</span>'
+      bar.innerHTML = '<span class="lic-ic">🎫</span>'
         + '<span>' + (en
-          ? '<b>Every feature is unlocked</b> — unlimited journal, '
-            + 'MT5 Sync included. Nothing to activate.'
-          : '<b>Toutes les fonctions sont ouvertes</b> — journal illimité, '
-            + 'synchronisation MT5 comprise. Rien à activer.')
-        + '</span>';
+          ? '<b>Free edition</b> — MT5 Sync (30 trades), economic calendar, '
+            + 'alerts &amp; watchlist. Everything else requires a subscription.'
+          : '<b>Édition gratuite</b> — MT5 Sync (' + LIC_FREE_TRADES + ' trades), '
+            + 'calendrier économique, alertes &amp; watchlist. '
+            + 'Tout le reste est sur abonnement.')
+        + (full
+          ? ' <b>' + (en ? '(' + left + ' trade(s) left on MT5)'
+                        : '(' + left + ' trade(s) MT5 restant(s)') + '.</b>'
+          : en ? ' <b>MT5 quota reached — subscribe to import more.</b>'
+               : ' <b>Quota MT5 atteint — abonnez-vous pour importer la suite.</b>')
+        + '</span>'
+        + '<a class="btn btn-p" style="text-decoration:none;" target="_blank" rel="noopener" href="' + BUY_URL + '">'
+          + (en ? 'Get the subscription' : 'Obtenir l\u2019abonnement') + '</a>';
     }
+  }
+  // Première réponse du moteur : si l'utilisateur est en gratuit et que la
+  // page visible est verrouillée (ex : Dashboard d'accueil), on l'emmène
+  // vers MT5, le module gratuit phare.
+  if (free && !licHomeDone && LIC.checked) {
+    licHomeDone = true;
+    try {
+      const cur = document.querySelector('.page.on');
+      const curId = cur ? cur.id.replace('pg-', '') : '';
+      if (curId && !licAllows(curId) && typeof G === 'function') G('mt5');
+    } catch (e) { }
   }
   // Le badge d'expiration proche est un service, pas une menace.
   const warn = document.getElementById('lic-warn');
@@ -13595,13 +13772,8 @@ function licRender() {
   const box = document.getElementById('pg-licence');
   if (!box) return;
   const en = (LANG === 'en');
-  // Version entièrement ouverte : afficher « Aucune licence active » en
-  // rouge inquiétait pour rien, puisqu'aucune clé n'est requise.
-  const st = (!LIC.valid && !LIC_ABONNEMENT_ACTIF)
-    ? '<div class="lic-state ok"><span class="lic-dot"></span>'
-      + (en ? 'Full version — every module unlocked'
-            : 'Version complète — tous les modules sont ouverts') + '</div>'
-    : LIC.valid
+  // Statut global : licence active, version complète, ou édition gratuite.
+  const st = LIC.valid
     ? '<div class="lic-state ok"><span class="lic-dot"></span>'
       + (en ? 'Active licence' : 'Licence active') + ' — ' + mkEsc(LIC.planLabel || '')
       + (LIC.expires === 'never'
@@ -13609,31 +13781,66 @@ function licRender() {
         : (en ? ' until ' : ' jusqu\u2019au ') + mkEsc(LIC.expires)
           + ' · ' + LIC.daysLeft + (en ? ' days left' : ' jours restants'))
       + '</div>'
-    : '<div class="lic-state ko"><span class="lic-dot"></span>'
-      + (en ? 'No active licence' : 'Aucune licence active')
-      + ' — ' + licReasonText(LIC.reason) + '</div>'
-    // La clé reste parfaitement utilisable même si l'empreinte machine a
-    // changé (mise à jour Windows, réinstallation) : on le rassure d'un mot.
+    : !LIC_ABONNEMENT_ACTIF
+      ? '<div class="lic-state ok"><span class="lic-dot"></span>'
+        + (en ? 'Full version — every module unlocked'
+              : 'Version complète — tous les modules sont ouverts') + '</div>'
+      : '<div class="lic-state ko"><span class="lic-dot"></span>'
+        + (en ? 'Free edition' : 'Édition gratuite')
+        + ' — ' + (en ? 'basic modules only' : 'modules de base uniquement') + '</div>'
+    // La clé reste parfaitement utilisable même si l'identifiant a changé
+    // (réinstallation, réinitialisation du système) : on le rassure d'un mot.
     + (LIC.valid && LIC.machineAutre
-        ? '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px;">' 
-          + (en ? 'This licence was activated on another computer — it works here too.'
-                : 'Cette licence a été activée sur un autre ordinateur — elle fonctionne aussi ici.') + '</p>'
+        ? '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px;">'
+          + (en ? 'This licence was activated on another device — it works here too.'
+                : 'Cette licence a été activée sur un autre appareil — elle fonctionne aussi ici.') + '</p>'
         : '');
 
   const mid = LIC.machineId || LIC.machine || '';
+
+  // Ce que contient l'édition gratuite, puis ce que débloque l'abonnement.
+  const incFree = [
+    en ? 'MT5 Sync (30 trades)' : 'MT5 Sync (30 trades)',
+    en ? 'Economic calendar (Market Hub)' : 'Calendrier économique (Market Hub)',
+    en ? 'Price alerts & watchlist' : 'Alertes de prix & watchlist',
+    en ? 'Journal (read-only, MT5 trades)' : 'Journal (lecture seule, trades MT5)'
+  ].map(function (x) { return '<li class="free">' + x + '</li>'; }).join('');
+  const incFull = [
+    en ? 'Unlimited MT5 Sync' : 'Synchronisation MT5 illimitée',
+    en ? 'Manual trade journal (unlimited)' : 'Journal de trades manuel illimité',
+    en ? 'Analytics & reports' : 'Analytiques & rapports',
+    en ? 'Market Hub (sessions, sentiment, news)' : 'Market Hub (sessions, sentiment, actualités)',
+    en ? 'AI agents (calendar analyst, coach, professor)' : 'Agents IA (analyste calendrier, coach, professeur)',
+    en ? 'Education & Macro (154 courses, quiz)' : 'Éducation & Macro (154 cours, quiz)',
+    'Gold Event Risk', 'Playbook', 'COT & Biais',
+    en ? 'Cloud backup' : 'Sauvegarde Cloud'
+  ].map(function (x) { return '<li class="yes">' + x + '</li>'; }).join('');
+
   box.innerHTML =
     '<h2 style="font-size:17px;font-weight:900;margin-bottom:4px;">'
       + (en ? 'Licence' : 'Licence') + '</h2>'
     + '<p style="font-size:11px;color:var(--text3);margin-bottom:14px;">'
-      + (!LIC_ABONNEMENT_ACTIF
-          ? (en ? 'Nothing to activate: this version is complete.'
-                : 'Rien à activer : cette version est complète.')
-          : (en ? 'Activate your subscription to unlock every module.'
-                : 'Activez votre abonnement pour débloquer tous les modules.')) + '</p>'
+      + (en ? 'Activate your purchase code (received by e-mail) to unlock every module.'
+            : 'Activez votre code d\u2019achat (reçu par e-mail) pour débloquer tous les modules.')
+      + '</p>'
     + st
+    + (LIC.valid
+        ? ''
+        : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
+          + '<a class="btn btn-p" target="_blank" rel="noopener" href="' + BUY_URL + '" '
+          + 'style="text-decoration:none;">🛒 ' + (en ? 'Get the subscription'
+                                                    : 'Obtenir l\u2019abonnement') + '</a>'
+          + '</div>')
     + (LIC_ABONNEMENT_ACTIF ? (''
       + '<div class="lic-card">'
-      + '<div class="lic-lbl">' + (en ? 'Your purchase code' : 'Votre code d\u2019achat') + '</div>'
+      + '<div class="lic-lbl">' + (en ? 'Activate with your purchase code'
+                                      : 'Activer avec votre code d\u2019achat') + '</div>'
+      + '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:2px;">'
+        + (en ? 'Your e-mail is your account: it lets you manage your devices yourself.'
+              : 'Votre e-mail est votre compte : il vous permet de gérer vos appareils vous-m\u00eame.') + '</p>'
+      + '<input id="lic-email" class="lic-in" type="email" spellcheck="false" autocomplete="email" '
+        + 'placeholder="trader@mail.com" onkeydown="if(event.key===\u0027Enter\u0027)licCodeActivate()">'
+      + '<div style="height:8px;"></div>'
       + '<input id="lic-code" class="lic-in" spellcheck="false" autocomplete="off" '
         + 'placeholder="OTH-XXXXXXXX-XXXXXXXX" '
         + 'onkeydown="if(event.key===\u0027Enter\u0027)licCodeActivate()">'
@@ -13641,11 +13848,20 @@ function licRender() {
         + '<button class="btn btn-p" onclick="licCodeActivate()">⚡ '
           + (en ? 'Activate automatically' : 'Activer automatiquement') + '</button>'
       + '</div>'
-      + '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:8px;">'
-        + (en ? 'Just bought the software? Paste the code you received — nothing else to do.'
-              : 'Vous venez d\u2019acheter le logiciel ? Collez le code reçu : rien d\u2019autre '
-                + '\u00e0 faire, votre licence s\u2019applique toute seule.') + '</p>'
       + '<div id="lic-code-msg" style="margin-top:8px;"></div>'
+      + '</div>'
+      + '<div class="lic-card" id="lic-dev-card">'
+      + '<div class="lic-lbl">' + (en ? 'Your devices' : 'Vos appareils') + '</div>'
+      + '<p style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:2px;">'
+        + (en ? 'Registered devices for this code (max 2). Remove one to free a slot '
+             + '— for example after a system reinstall.'
+             : 'Appareils enregistrés sur ce code (2 max). Retirez-en un pour libérer '
+             + 'une place — par exemple après une r\u00e9installation du système.') + '</p>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;">'
+        + '<button class="btn btn-s" onclick="licDevicesRefresh()">📱 '
+          + (en ? 'Show my devices' : 'Afficher mes appareils') + '</button>'
+      + '</div>'
+      + '<div id="lic-devices" style="margin-top:8px;"></div>'
       + '</div>'
       + '<div class="lic-card">'
       + '<div class="lic-lbl">' + (en ? 'Your licence key' : 'Votre clé de licence') + '</div>'
@@ -13661,21 +13877,12 @@ function licRender() {
     + '</div>'
     ) : '')
     + '<div class="lic-card">'
-      + '<div class="lic-lbl">' + (en ? 'Your computer code' : 'Code de votre ordinateur') + '</div>'
+      + '<div class="lic-lbl">' + (en ? 'Your device ID' : 'Identifiant de votre appareil') + '</div>'
       + '<p style="font-size:11.5px;color:var(--text3);line-height:1.7;margin-bottom:8px;">'
-        + (!LIC_ABONNEMENT_ACTIF
-            ? (en ? 'Identifier of this computer. Only useful if you contact support.'
-                  : 'Identifiant de cet ordinateur. Utile uniquement si vous '
-                    + 'contactez le support.')
-            : (en ? 'This code identifies this computer. It is used when activating '
-                + 'your purchase code (limited number of computers).'
-                  : 'Ce code identifie cet ordinateur. Il sert lors de l\u2019activation '
-                + 'de votre code d\u2019achat (nombre d\u2019ordinateurs limité).'))
-      + '</p>'
-      /* Tant que le moteur n'a pas répondu, on le dit clairement ET on
-         indique que la recherche est en cours : « moteur non démarré »
-         tout court laissait croire à une panne définitive, alors que la
-         réponse arrive souvent une ou deux secondes plus tard. */
+        + (en ? 'This software ID never changes when you reinstall the software. '
+             + 'It is sent to the activation server with your code and e-mail.'
+             : 'Cet identifiant LOGICIEL ne change jamais à la r\u00e9installation du logiciel. '
+             + 'Il est envoyé au serveur d\u2019activation avec votre code et votre e-mail.') + '</p>'
       + '<div class="lic-mid" id="lic-mid">' + (mid ? mkEsc(mid)
           : (LIC.checked && !LIC.online
               ? (en ? 'searching for the engine…' : 'recherche du moteur…')
@@ -13683,38 +13890,25 @@ function licRender() {
       + (mid ? '<button class="btn btn-s" style="margin-top:8px;" onclick="licCopyMid()">📋 '
           + (en ? 'Copy' : 'Copier') + '</button>'
         : '<p style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">'
-          + (en ? 'The engine takes a few seconds to start. This code appears on its own — '
+          + (en ? 'The engine takes a few seconds to start. This ID appears on its own — '
                 + 'no need to reload. If it stays like this, start OmniTrade Hub with '
                 + 'start-windows.bat (or start-mac.command).'
-                : 'Le moteur met quelques secondes à démarrer. Ce code s\u2019affiche tout '
-                + 'seul, sans recharger la page. S\u2019il reste ainsi, lancez OmniTrade Hub '
-                + 'avec 1-START-WINDOWS.bat (ou 1-START-MAC.command).')
+                : 'Le moteur met quelques secondes à démarrer. Cet identifiant s\u2019affiche '
+                + 'tout seul, sans recharger la page. S\u2019il reste ainsi, lancez OmniTrade '
+                + 'Hub avec 1-START-WINDOWS.bat (ou 1-START-MAC.command).')
           + '</p>')
     + '</div>'
-    /* Version entièrement ouverte : on ne montre plus une liste de
-       cadenas — il n'y en a plus — mais ce que le trader possède. */
     + '<div class="lic-card">'
-      + '<div class="lic-lbl">' + (en ? 'Everything included'
-                                      : 'Tout est inclus') + '</div>'
-      + '<ul class="lic-ul">'
-        + [en ? 'Unlimited manual trade journal'
-              : 'Journal de trades manuel illimité',
-           'MT5 Sync',
-           en ? 'AI agents (calendar analyst, coach, professor)'
-              : 'Agents IA (analyste calendrier, coach, professeur)',
-           en ? 'Education & Macro (154 courses, quiz)'
-              : 'Éducation & Macro (154 cours, quiz)',
-           en ? 'Market Hub (calendar, news, sentiment)'
-              : 'Market Hub (calendrier, actualités, sentiment)',
-           'Gold Event Risk',
-           'Playbook',
-           en ? 'Cloud backup' : 'Sauvegarde Cloud']
-          .map(function (x) { return '<li class="yes">' + x + '</li>'; }).join('')
-      + '</ul>'
-      + '<p style="font-size:11.5px;color:var(--text3);line-height:1.7;'
-        + 'margin-top:9px;">' + (en
-          ? 'No key, no activation: every module is open.'
-          : 'Aucune clé, aucune activation : tous les modules sont ouverts.')
+      + '<div class="lic-lbl">' + (en ? 'Free edition' : 'Édition gratuite') + '</div>'
+      + '<ul class="lic-ul">' + incFree + '</ul>'
+    + '</div>'
+    + '<div class="lic-card">'
+      + '<div class="lic-lbl">' + (en ? 'With a subscription — everything'
+                                      : 'Avec un abonnement — tout') + '</div>'
+      + '<ul class="lic-ul">' + incFull + '</ul>'
+      + '<p style="font-size:11.5px;color:var(--text3);line-height:1.7;margin-top:9px;">'
+        + (en ? 'No key to copy: your purchase code + e-mail do everything.'
+              : 'Aucune clé à copier : votre code d\u2019achat + votre e-mail font tout.')
       + '</p>'
     + '</div>'
     + '<div class="lic-card">'
@@ -13784,20 +13978,16 @@ function licCopyMid() {
   } catch (e) { }
 }
 
-/** Écran affiché à la place d'un module verrouillé. */
+/** Écran affiché à la place d'un module verrouillé (édition gratuite). */
 function licBlockedHtml(page) {
   const en = (LANG === 'en');
-  const names = {
-    mt5: 'MT5 Sync', edu: en ? 'Education & Macro' : 'Éducation & Macro',
-    cloud: en ? 'Cloud backup' : 'Sauvegarde Cloud', market: 'Market Hub',
-    playbook: 'Playbook'
-  };
+  const name = (typeof TITLES==='object' && TITLES[page]) ? TITLES[page] : page;
   return '<div class="lic-blocked">'
     + '<div class="lic-blocked-ic">🔒</div>'
-    + '<h3>' + mkEsc(names[page] || page) + '</h3>'
+    + '<h3>' + mkEsc(name) + '</h3>'
     + '<p>' + (en
-      ? 'This module is reserved for subscribers. Your manual trade journal stays fully available.'
-      : 'Ce module est réservé aux abonnés. Votre journal de trades manuel reste entièrement accessible.')
+      ? 'This module is reserved for subscribers. The free edition includes MT5 Sync (30 trades), the economic calendar, alerts and the watchlist.'
+      : 'Ce module est réservé aux abonnés. L\u2019édition gratuite comprend MT5 Sync (30 trades), le calendrier économique, les alertes et la watchlist.')
     + '</p>'
     + '<button class="btn btn-p" onclick="G(\'licence\')">'
       + (en ? 'Activate a licence' : 'Activer une licence') + '</button>'
@@ -18210,6 +18400,11 @@ function mkRefresh(force){
 
 /** Renderer de la page (appelé par le dispatcher central). */
 function rMarket(){
+  // v9 : en édition gratuite, Market Hub ne montre QUE le calendrier économique.
+  const free = (typeof licOuvert === 'function' && !licOuvert());
+  const pmg = document.getElementById('pg-market');
+  if (pmg) pmg.classList.toggle('pg-market-free', free);
+  if (free) { try { mkLoadCal(); } catch (e) { } }
   // Filtres du calendrier : boutons de devises et état mémorisé.
   calRenderCurBtns();
   const _w=document.getElementById('cal-when'); if(_w)_w.value=calFWhen;

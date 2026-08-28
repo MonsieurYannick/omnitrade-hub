@@ -55,7 +55,7 @@ const band = (num, title, tag) => `
   <div class="band">
     <div class="logo">OmniTrade <span>Hub</span> — Guide n°${num}</div>
     <div class="sub">${title}</div>
-    <div class="meta">Guide client · v8.88 · ${tag}</div>
+    <div class="meta">Guide client · v9.0 · ${tag}</div>
   </div>`
 
 function page(bandHtml, body) {
@@ -70,7 +70,7 @@ const FOOTER = `
 async function pdf(html, file) {
   const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-gpu'] })
   const p = await browser.newPage()
-  await p.setContent(html, { waitUntil: 'networkidle0' })
+  await p.setContent(html, { waitUntil: 'domcontentloaded', timeout: 60000 })
   await p.pdf({
     path: file,
     format: 'A4',
@@ -268,43 +268,53 @@ const G3 = page(band(3, 'Alertes Telegram — recevoir vos briefs de séance sur
 `)
 
 // ═══════════════════════════ GUIDE 4 — LICENCE & ACTIVATION ═══════════════════════════
-const G4 = page(band(4, 'Licence, code d\u2019achat et activation', 'code OTH · ordinateurs · renouvellement'), `
-  <h2>1. Bonne nouvelle : la version est complète à l'installation</h2>
-  <p>OmniTrade Hub s'installe <b>déjà déverrouillé</b> : la page Licence affiche
-  <b>« Version complète — tous les modules sont ouverts »</b>. Journaux, MT5 Sync, agents IA,
-  Éducation, Market Hub, Playbook, Sauvegarde Cloud… <b>rien n'est verrouillé</b>.</p>
-  <p>Il n'y a <b>plus de blocage par identifiant d'ordinateur</b> : même après une mise à jour Windows
-  ou une réinstallation, tout continue de fonctionner normalement.</p>
-  ${img('03-licence.png', 'La page Licence en état « Version complète » : statut, code de votre ordinateur, contenu inclus et clés IA.', 'max-height:22cm;width:auto;margin:0 auto;display:block;')}
+const G4 = page(band(4, 'Licence, code d\u2019achat et activation', 'code OTH · e-mail · appareils'), `
+  <h2>1. Édition gratuite : que puis-je utiliser ?</h2>
+  <p>À l'installation, OmniTrade Hub démarre en <b>édition gratuite</b>. Vous gardez l'essentiel :</p>
+  <ul>
+    <li><b>MT5 Sync</b> — jusqu'à <b>30 trades</b> synchronisés depuis MetaTrader 5.</li>
+    <li><b>Calendrier économique</b> (Market Hub).</li>
+    <li><b>Alertes de prix</b> &amp; <b>watchlist</b>.</li>
+    <li><b>Journal</b> — consultation de vos trades MT5 (30 max) en <b>lecture seule</b>.</li>
+  </ul>
+  <p>Le reste (Analytiques, Playbook, Risque, Éducation &amp; Macro, Gold, COT, Sauvegarde Cloud,
+  saisie manuelle…) est réservé aux abonnés. Un bandeau en haut de l'interface indique
+  toujours les trades MT5 restants (gratuit) et propose <b>« Obtenir l'abonnement »</b>.</p>
+  ${img('03-licence.png', 'La page Licence en édition gratuite : statut, activation par code + e-mail, vos appareils, identifiant logiciel et liste de ce que débloque l\u2019abonnement.', 'max-height:22cm;width:auto;margin:0 auto;display:block;')}
 
-  <h2 class="newpage">2. Si vous avez acheté un code d'achat (OTH-…)</h2>
-  <p>Certains plans sont fournis avec un <b>code d'achat</b> (ex. <code>OTH-XXXXXXXX-XXXXXXXX</code>)
-  acheté sur la page de vente. Pour l'activer :</p>
+  <h2 class="newpage">2. Activer avec votre code d'achat (OTH-…)</h2>
+  <p>Après achat, vous recevez un <b>code d'achat</b> (ex. <code>OTH-XXXXXXXX-XXXXXXXX</code>)
+  par e-mail. Pour activer :</p>
   <ol>
     <li>Menu de gauche → <b>Licence</b>.</li>
-    <li>Dans le champ <b>« Votre code d'achat »</b>, collez le code reçu par e-mail (après paiement).</li>
-    <li>Cliquez <b>« Activer automatiquement »</b> : l'application contacte le serveur de licences,
-       crée votre clé et l'installe — <b>rien d'autre à faire</b>.</li>
+    <li>Renseignez l'<b>e-mail utilisé lors de l'achat</b> (c'est votre compte) puis collez le
+        code reçu dans le champ <b>« code d'achat »</b>.</li>
+    <li>Cliquez <b>« Activer automatiquement »</b> : l'application contacte le serveur,
+       crée votre clé liée à <b>cet appareil</b> et vous déverrouille — <b>rien d'autre à faire</b>.</li>
     <li>La page affiche alors « Licence active — &lt;plan&gt;, jusqu'au &lt;date&gt;, X jours restants ».</li>
   </ol>
   <div class="tip">Activation en quelques secondes, même le week-end. Aucune manipulation de clé,
-  aucun fichier à copier. Le code fonctionne sur <b>2 ordinateurs maximum</b> sur un même plan.</div>
+  aucun fichier à copier. Chaque code est limité à un nombre d'appareils (indiqué lors de l'achat).</div>
 
-  <h2>3. « Code de votre ordinateur » : à quoi ça sert ?</h2>
-  <p>C'est un identifiant local (<code>QQX…</code>) affiché sur la page Licence. Il n'est <b>pas requis</b>
-  pour activer. Gardez-le de côté uniquement si vous devez écrire au support (pour qu'on vous
-  retrouve vite).</p>
+  <h2>3. Vos appareils &amp; l'identifiant logiciel</h2>
+  <p>La partie <b>« Identifiant de votre appareil »</b> est un code local qui n'a pas de secret :
+  c'est lui que le serveur associe à votre licence. Il est <b>stable</b> — il ne change pas quand
+  vous réinstallez OmniTrade Hub ou mettez à jour votre système.</p>
+  <p>La carte <b>« Vos appareils »</b> et son bouton <b>« Afficher mes appareils »</b> listent les
+  appareils enregistrés sur votre code. Cliquez <b>Retirer</b> pour libérer un emplacement
+  (utile après un changement de machine).</p>
+  <div class="warn">Ne partagez votre code d'achat avec personne ; il est lié à votre e-mail de
+  commande et à un quota d'appareils. Restez bien connecté à Internet le jour de l'activation.</div>
 
   <h2>4. Renouvellement / nouvelles commandes</h2>
   <ul>
     <li><b>Renouveler</b> un plan payant ? Revenez sur la page de vente et recommandez : vous recevrez
       un nouveau code, à activer de la même façon.</li>
-    <li><b>Changer d'ordinateur</b> ? Rien à faire : pas de blocage matériel.</li>
+    <li><b>Changer d'appareil</b> ? Retirez l'ancien appareil depuis la carte « Vos appareils », puis
+      activez sur le nouveau avec le même code + e-mail.</li>
     <li><b>Perdre son code ?</b> Écrivez au support avec votre e-mail de commande : on retrouve votre
       achat et on vous renvoie le code.</li>
   </ul>
-  <div class="warn">Ne partagez votre code d'achat avec personne : il est lié à votre commande
-  (limite de 2 ordinateurs).</div>
 `)
 
 // ═══════════════════════════ GUIDE 5 — SAUVEGARDE & SYNCHRO MT5 ═══════════════════════════

@@ -352,16 +352,17 @@
     voyant reste ROUGE. Aucun trade MT5 ne peut être lu ni enregistré.
 
   ▸ ABONNEMENT ET LICENCE
-    L'accès complet nécessite désormais une clé de licence. Sans clé,
-    vous conservez le journal de trades MANUEL, limité à 10 trades.
-    Les modules MT5 Sync, Agents IA, Éducation & Macro, Market Hub,
-    Playbook et Sauvegarde Cloud sont réservés aux abonnés.
-    Pour activer : menu de gauche → « Licence », collez votre code
-    d'achat (ex : OTH-M5F3XQ2P-RTLK92U) — le serveur vous remet votre clé
-    tout seul, vous n'avez rien d'autre à faire.
-    Votre code machine s'affiche sur cette même page : simple identifiant
-    de cet ordinateur, il sert uniquement à compter le nombre d'ordinateurs
-    autorisés. Il ne bloque jamais la licence.
+    Vous démarrez en ÉDITION GRATUITE : MT5 Sync (30 trades), calendrier
+    économique, alertes & watchlist, et le journal en lecture seule (vos
+    trades MT5). Le reste (Analytiques, Playbook, Risque, Éducation & Macro,
+    Gold, COT, Sauvegarde Cloud, saisie manuelle…) est réservé aux abonnés.
+    Pour activer : menu de gauche → « Licence », saisissez l'e-mail de votre
+    commande puis collez votre code d'achat (ex : OTH-M5F3XQ2P-RTLK92U) —
+    le serveur vous remet votre clé tout seul, rien d'autre à faire.
+    La carte « Vos appareils » liste les appareils enregistrés sur votre
+    code (Retirer pour libérer une place). L'identifiant affiché est un
+    identifiant LOGICIEL stable : il ne bloque rien et ne change pas si
+    vous réinstallez le logiciel.
 
   ▸ ALERTES EN ARRIÈRE-PLAN
     Un bouton « 🔔 Alertes » en haut à droite active les notifications

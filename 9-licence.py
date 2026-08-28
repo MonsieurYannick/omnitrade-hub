@@ -343,6 +343,82 @@ _MID_CACHE = None           # empreinte affichable, calculée une seule fois
 _MID_LOCK = threading.Lock()
 _MID_PRECHAUFFE = False
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  IDENTIFIANT DE L'APPAREIL (correctif v9)
+# ----------------------------------------------------------------------------
+#  Les licences ne sont PLUS liées au matériel (l'empreinte changeait après une
+#  mise à jour de Windows, une réinstallation ou un changement d'outil). À la
+#  place : un identifiant LOGICIEL persistant, stocké DANS LE PROFIL UTILISATEUR
+#  (~/.omnitrade/device.id). Il survit à la réinstallation de l'application.
+#  S'il est perdu (réinitialisation du système), l'e-mail du compte permet de
+#  gérer les appareils et de ré-associer la licence.
+# ─────────────────────────────────────────────────────────────────────────────
+_DEVICE_DIR_NAME = ".omnitrade"
+_DEVICE_FILE_NAME = "device.id"
+_DEVICE_PATH_CACHE = None
+_DEVICE_PATH_LOCK = threading.Lock()
+_SOFT_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"   # base32 : 32 caractères
+
+
+def _device_path():
+    """Chemin du fichier d'identité, dans le dossier du profil utilisateur.
+
+    ~ survit à une réinstallation de l'application (le dossier utilisateur
+    n'est pas touché). Windows : %USERPROFILE% ; macOS/Linux : $HOME.
+    """
+    global _DEVICE_PATH_CACHE
+    if _DEVICE_PATH_CACHE:
+        return _DEVICE_PATH_CACHE
+    with _DEVICE_PATH_LOCK:
+        if _DEVICE_PATH_CACHE:
+            return _DEVICE_PATH_CACHE
+        base = os.path.expanduser("~")
+        _DEVICE_PATH_CACHE = os.path.join(base, _DEVICE_DIR_NAME, _DEVICE_FILE_NAME)
+        return _DEVICE_PATH_CACHE
+
+
+def _gen_device_id():
+    """Nouvel identifiant : 16 caractères, alphabet base32 (A-Z, 2-7).
+
+    Même format que les anciennes empreintes, pour que l'API du moteur et le
+    serveur d'activation (oth-activate) n'aient rien à changer.
+    """
+    import secrets
+    return "".join(secrets.choice(_SOFT_ID_ALPHABET) for _ in range(16))
+
+
+def soft_device_id():
+    """Identifiant LOGICIEL persistant de l'appareil.
+
+    Crée ~/.omnitrade/device.id au premier lancement, le lit ensuite. Peut
+    échouer (profil en lecture seule, dossier verrouillé…) : dans ce cas on
+    retombe sur l'empreinte matérielle, qui reste produite en dégradé.
+    """
+    global _MID_CACHE
+    if _MID_CACHE:
+        return _MID_CACHE
+    try:
+        p = _device_path()
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        pid = ""
+        try:
+            with open(p, "r") as f:
+                pid = f.read().strip().upper()
+        except FileNotFoundError:
+            pid = ""
+        if not re.fullmatch(r"[A-Z2-7]{16}", pid):
+            pid = _gen_device_id()
+            fd = os.open(p, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            try:
+                os.write(fd, pid.encode("ascii"))
+            finally:
+                os.close(fd)
+        _MID_CACHE = pid
+        return pid
+    except Exception:
+        # Repli : identité matérielle classique (jamais bloquante).
+        return _mid_depuis(raw_machine_id())
+
 
 def prechauffer_machine_id():
     """Calcule l'empreinte en arrière-plan, sans bloquer le démarrage.
@@ -477,22 +553,32 @@ def _probe_machine_id():
 
 
 def machine_id():
-    """Empreinte affichable : 16 caractères, dérivée par hachage.
+    """Identifiant affichable de l'appareil : 16 caractères base32.
 
-    On ne transmet JAMAIS l'identifiant matériel brut : seul son condensé
-    circule, ce qui limite la donnée personnelle exposée (RGPD).
+    DEPUIS la v9 : identifiant LOGICIEL persistant (soft_device_id), stocké
+    dans le profil utilisateur. Il ne change ni après la réinstallation de
+    l'application, ni après une mise à jour de Windows — seules les sources
+    de cet historique causaient des refus.
 
-    Résultat mémorisé lui aussi : c'est cette fonction que le moteur
-    appelle six fois par requête.
+    L'empreinte matérielle ne sert plus que de repli, si le profil est
+    illisible. Résultat mémorisé : le moteur appelle cette fonction plusieurs
+    fois par requête.
     """
     global _MID_CACHE
     if _MID_CACHE:
         return _MID_CACHE
     # Le verrou évite que deux requêtes simultanées lancent chacune leur
-    # sonde système : sur Windows, cela doublerait l'attente.
+    # création du fichier d'identité.
     with _MID_LOCK:
         if _MID_CACHE:
             return _MID_CACHE
+        try:
+            mid = soft_device_id()
+            if re.fullmatch(r"[A-Z2-7]{16}", mid):
+                _MID_CACHE = mid
+                return mid
+        except Exception:
+            pass
         raw = raw_machine_id()
         h = hashlib.sha256(("OmniTradeHub|" + raw).encode()).digest()
         mid = base64.b32encode(h)[:16].decode()
