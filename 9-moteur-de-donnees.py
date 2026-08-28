@@ -5859,8 +5859,10 @@ def api_cb_groq_set():
 
 
 _LLM_PROVIDERS = {
-    "groq": (_cb.GROQ_URL, _groq_key_read),
-    "openrouter": (_cb.OR_URL, _or_key_read),
+    "groq": (getattr(_cb, "GROQ_URL", None)
+             or "https://api.groq.com/openai/v1/chat/completions", _groq_key_read),
+    "openrouter": (getattr(_cb, "OR_URL", None)
+                   or "https://openrouter.ai/api/v1/chat/completions", _or_key_read),
 }
 
 
@@ -5904,7 +5906,16 @@ def api_llm_completions():
     err_payload = None
     for insecure in (False, True):
         try:
-            with _urq.urlopen(req, timeout=30, context=_cb._ssl(insecure)) as r:
+            ctx = None
+            if _cb is not None:
+                ctx = _cb._ssl(insecure)
+            else:
+                import ssl as _sslmod
+                ctx = _sslmod.create_default_context()
+                if insecure:
+                    ctx.check_hostname = False
+                    ctx.verify_mode = _sslmod.CERT_NONE
+            with _urq.urlopen(req, timeout=30, context=ctx) as r:
                 raw = r.read().decode("utf-8", "replace")
                 status = getattr(r, "status", 200)
             break

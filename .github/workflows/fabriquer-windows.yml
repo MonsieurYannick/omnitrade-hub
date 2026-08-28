@@ -115,7 +115,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force "OmniTradeHub-Windows-PRET" | Out-Null
           Copy-Item -Recurse "dist\OmniTradeBridge" "OmniTradeHub-Windows-PRET\bin"
-          foreach ($f in @($env:APP, "9-moteur-de-donnees.py", "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat")) {
+          foreach ($f in @($env:APP, "9-moteur-de-donnees.py", "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat", "cb_intel_backend.py", "cb_intel_prompt.md")) {
             if (Test-Path $f) { Copy-Item $f "OmniTradeHub-Windows-PRET\" -Force }
           }
           if (Test-Path "OmniTradeHub.ico") { Copy-Item "OmniTradeHub.ico" "OmniTradeHub-Windows-PRET\" -Force }

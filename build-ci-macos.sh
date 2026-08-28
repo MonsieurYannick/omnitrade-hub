@@ -99,7 +99,7 @@ cp -R dist/OmniTradeBridge "$RES/OmniTradeBridge"
 chmod -R +x "$RES/OmniTradeBridge"
 cp -f "$APP" "$RES/OmniTradeBridge/_internal/$HTML_NAME" 2>/dev/null || true
 
-for f in "$APP" 9-moteur-de-donnees.py 9-licence.py public_key.txt 2-OmniTradeExport.mq5; do
+for f in "$APP" 9-moteur-de-donnees.py 9-licence.py public_key.txt 2-OmniTradeExport.mq5 cb_intel_backend.py cb_intel_prompt.md; do
   [[ -f "$f" ]] && cp -f "$f" "$RES/"
 done
 [[ -f "0-LISEZ-MOI.txt" ]] && cp -f "0-LISEZ-MOI.txt" "$RES/" 2>/dev/null
