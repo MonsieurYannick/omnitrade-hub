@@ -11,7 +11,7 @@
 //   { action:'get',    code }
 //   { action:'revoke', code, revoked?:true|false }
 //   { action:'stats' }
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -167,3 +167,5 @@ export async function handler(req: Request, ctx?: { env?: Record<string, string>
     return json(500, { ok: false, error: 'technique', msg: String(e?.message ?? e) })
   }
 }
+
+Deno.serve(handler)

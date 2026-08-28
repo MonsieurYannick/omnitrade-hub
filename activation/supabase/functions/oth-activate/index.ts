@@ -10,7 +10,7 @@
 //   body    : { code: 'OTH-XXXXXXXX-XXXXXXXX', machine_id: 'MBK7UVEURZDSD35Z' }
 // Retour (ok) : { ok:true, key:'OTH1-…-…', plan, expires, sn }
 // Retour (ko) : { ok:false, code:'permalink' }
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { makeLicense, normalizeMid, PLANS } from '../_shared/oth_core.ts'
 
 const cors = {
@@ -97,7 +97,12 @@ export async function handler(req: Request, ctx: { env?: Record<string, string> 
     return json(400, { ok: false, code: 'json', msg_fr: 'Requête invalide.', msg_en: 'Invalid request.' })
   }
 
-  const codeRaw = (body.code || '').trim().toUpperCase().replace(/\s+/g, '').replace(/-/g, '')
+  // Normalisation tolérante : tirets et espaces acceptés, avec ou sans préfixe.
+  // Stockage canonique : OTH-XXXXXXXX-XXXXXXXX (voir oth-issue/newCode).
+  const cLoose = (body.code || '').trim().toUpperCase().replace(/\s+/g, '').replace(/-/g, '')
+  const codeRaw = cLoose.startsWith('OTH') && cLoose.length >= 19
+    ? 'OTH-' + cLoose.slice(3, 11) + '-' + cLoose.slice(11, 19)
+    : (body.code || '').trim().toUpperCase().replace(/\s+/g, '')
   if (!codeRaw) return err('code_vide')
 
   const mid = normalizeMid(body.machine_id || '')
@@ -166,3 +171,5 @@ export async function handler(req: Request, ctx: { env?: Record<string, string> 
     return err('technique')
   }
 }
+
+Deno.serve(handler)

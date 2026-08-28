@@ -42,3 +42,4 @@ omnitrade-v*-pre-refactor.html
 zellatrack-*.html
 *.backup.htmlOmniTradeHub.iconset
 activation/.sk.env
+activation/supabase/.temp/

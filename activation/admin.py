@@ -34,7 +34,7 @@ def load_cfg():
         sys.exit(
             f"Il manque le fichier {CFG}.\n"
             "Créez-le ainsi (remplacez les valeurs par les vôtres) :\n"
-            json.dumps(
+            + json.dumps(
                 {"function_url": "https://<projet>.supabase.co/functions/v1/oth-issue",
                  "admin_key": "<mot de passe vendeur>"},
                 indent=2,
@@ -102,6 +102,8 @@ def show(resp, commands=("create", "revoke", "stats")):
             print("\n(ce code n'a pas encore été activé)")
     elif commands == "revoke":
         print("✅", "Code révoqué" if resp.get("revoked") else "Code réactivé", ":", resp.get("code"))
+    elif commands == "stats":
+        print("📊 Codes créés à ce jour :", resp.get("total_codes", 0))
 
 
 def main():
