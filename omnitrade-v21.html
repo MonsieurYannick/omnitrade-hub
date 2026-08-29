@@ -11954,16 +11954,14 @@ const SECA_KEY='omnihub_seca';
 async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 
 async function initLogin(){
-  const h=localStorage.getItem(LOGIN_HASH_KEY);
-  if(!h){const d=await sha256(LOGIN_DEFAULT);localStorage.setItem(LOGIN_HASH_KEY,d);}
-  // Premier lancement → setup sécurité
-  if(!localStorage.getItem(SECQ_KEY)){
-    document.getElementById('setup-overlay')?.classList.remove('off');
-    return;
-  }
-  // Setup déjà fait → s'assurer que l'overlay setup est caché
+  // Compte unique : l'accès passe uniquement par e-mail + mot de passe Supabase.
+  // Plus de mot de passe local ni de question de sécurité (obsolètes) : toute
+  // la sécurité (sauvegarde, licence) est liée au compte e-mail.
   document.getElementById('setup-overlay')?.classList.add('off');
-  if(sessionStorage.getItem(LOGIN_KEY)){
+  // Si une session Supabase est déjà ouverte (persistSession), on ouvre l'app.
+  let session=false;
+  try{ session = (typeof sb!=="undefined"&&sb.client)?!!sb.user:false; }catch(e){}
+  if(sessionStorage.getItem(LOGIN_KEY)||session){
     document.getElementById('login-overlay')?.classList.add('off');
   }
 }
@@ -12021,23 +12019,17 @@ async function doLogin(){
   if(_loginMode==='signup'){
     return doSignup(email,pwd);
   }
-  // Compte unique strict : la connexion passe par Supabase (email + mot de passe).
-  // Sans email -> cadenas local uniquement (licence masquée, car pas de compte).
-  if(email){
-    const s=await cloudLogin(email,pwd);
-    if(s){ unlockApp(); return; }
-    return;   // cloudLogin a affiché l'erreur : on n'ouvre PAS l'app.
+  // Connexion UNIQUEMENT par compte (email + mot de passe Supabase).
+  // L'app est conçue pour fonctionner en ligne ; il n'y a pas de compte
+  // "hors-ligne". Sans compte valide -> pas d'accès (aucun trou de sécurité).
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    if(err)err.textContent='Saisissez votre adresse e-mail.';
+    return;
   }
-  // Repli local : uniquement un vrai mot de passe défini (jamais le défaut 'omnitrade'
-  // pour valider un accès à une licence). C'est le cadenas de l'appareil.
-  const h=await sha256(pwd);
-  const stored=localStorage.getItem(LOGIN_HASH_KEY);
-  if(h===stored && h !== await sha256(LOGIN_DEFAULT)){
-    unlockApp();
-  }else{
-    if(err)err.textContent='Saisissez un e-mail et votre mot de passe de compte pour vous connecter.';
-    const pw=document.getElementById('login-pwd'); if(pw){pw.value='';pw.focus();}
-  }
+  if(pwd.length<6){ if(err)err.textContent='Mot de passe : 6 caractères minimum.'; return; }
+  const s=await cloudLogin(email,pwd);
+  if(s){ unlockApp(); }
+  // sinon cloudLogin a affiché l'erreur -> l'app ne s'ouvre pas.
 }
 
 /* Connexion / création via Supabase -> ouvre l'app + sauvegarde liée. */
@@ -12093,11 +12085,16 @@ function unlockApp(){
   document.getElementById('login-overlay')?.classList.add('off');
   const e=document.getElementById('login-err'); if(e)e.textContent='';
   try{alertStartChecker();}catch(e0){}
+  // Après connexion (compte e-mail), on re-vérifie la licence : elle n'est
+  // active que si l'e-mail du compte == e-mail de la licence (licEmailOk).
+  try{ if(typeof licRefresh==='function') licRefresh(); }catch(e1){}
   // La Sauvegarde Cloud suit automatiquement la session Supabase (onAuthStateChange).
 }
 
 function doLogout(){
   sessionStorage.removeItem(LOGIN_KEY);
+  try{ if(sb&&sb.client&&sb.client.auth) sb.client.auth.signOut(); }catch(e){}
+  try{ licMemClear(); }catch(e){}
   location.reload();
 }
 
@@ -13893,7 +13890,11 @@ const LIC_ABONNEMENT_ACTIF = true;
    Tous les contrôles passent désormais par cette fonction, au lieu de
    tester LIC.valid à quatre endroits différents comme auparavant. */
 function licOuvert() {
-  return (!LIC_ABONNEMENT_ACTIF) || (typeof LIC !== 'undefined' && LIC.valid);
+  if (!LIC_ABONNEMENT_ACTIF) return true;
+  // Garde sécurité : une licence n'ouvre les modules que si l'e-mail du compte
+  // connecté == l'e-mail de la licence (sinon tout reste verrouillé).
+  if (typeof licEmailOk === 'function' && !licEmailOk()) return false;
+  return (typeof LIC !== 'undefined' && LIC.valid);
 }
 
 let LIC = {
@@ -14561,7 +14562,8 @@ function licRender() {
       + 'if(m)m.textContent=nvidiaKey()?\'Cle NVIDIA enregistree.\':\'Cle NVIDIA effacee.\';})()">Enregistrer NVIDIA</button>'
       + '<span id="lic-nvi-msg" style="font-size:12px;color:var(--text2);">'
       + (typeof nvidiaKey==='function'&&nvidiaKey()?'Cle NVIDIA deja presente.':'Aucune cle NVIDIA.')
-      + '</span></div></div>';
+      + '</span></div></div>'
+      + ntfyCard();
 
   // Restaure code + e-mail mémorisés (licRender détruit les champs) : on ne
   // fait jamais retaper le code au client s'il a déjà été saisi.
@@ -18802,6 +18804,26 @@ function supCopyDiag(){
   }catch(e){}
 }
 
+/* Carte "Notifications mobiles (ntfy)" — réutilisable (Support + Licence). */
+function ntfyCard(){
+  return '<div class="lic-card">'
+    +'<div class="lic-lbl">📱 Notifications mobiles (ntfy — gratuit, sans Telegram)</div>'
+    +'<p style="font-size:12px;color:var(--text2);line-height:1.65;margin:0 0 10px;">'
+    +'Recevez vos alertes (prix, prop firm, drawdown) <b>directement sur votre téléphone</b>, sans Telegram. '
+    +'<b>Gratuit et sans compte</b> : installez l\'app <b>ntfy</b> (iOS/Android), abonnez-vous à votre <b>topic privé</b>, '
+    +'et collez-le ici. La notification arrive même app fermée (le pont doit tourner).</p>'
+    +'<div class="fi" style="margin-bottom:8px;"><label>Topic ntfy (ex. moncode-secret-42)</label>'
+    +'<input id="ntfy-topic" class="lic-in" placeholder="moncode-secret-42" autocomplete="off"></div>'
+    +'<div id="ntfy-st" style="font-size:12px;color:var(--text3);margin:6px 0 10px;">—</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:7px;">'
+    +'<button class="btn btn-p" onclick="ntfySave()">Enregistrer</button>'
+    +'<button class="btn" onclick="ntfyTest()">➤ Tester</button>'
+    +'</div>'
+    +'<p style="font-size:11px;color:var(--text3);margin:8px 0 0;">📲 App : <code>https://ntfy.sh</code> · Topic privé = une chaîne secrète que vous choisissez. '
+    +'Utilisez un topic <b>imprévisible</b> (jamais votre email) pour que personne d\'autre ne s\'y abonne.</p>'
+    +'</div>';
+}
+
 function supRender(){
   const box=document.getElementById('pg-support'); if(!box)return;
   const en=(LANG==='en');
@@ -18880,22 +18902,7 @@ function supRender(){
       +'</div>'
       +'<p style="font-size:11px;color:var(--text3);margin:10px 0 0;">Sur Telegram : écrivez une question (EURUSD, or, session…) — le bot répond sur CE sujet, plus besoin de /radar, ou /brief /radar /biais /sydney /tokyo /londres /ny /dossier /macro /or /cot /cal /news</p>'
     +'</div>'
-    +'<div class="lic-card">'
-      +'<div class="lic-lbl">📱 Notifications mobiles (ntfy — gratuit, sans Telegram)</div>'
-      +'<p style="font-size:12px;color:var(--text2);line-height:1.65;margin:0 0 10px;">'
-      +'Recevez vos alertes (prix, prop firm, drawdown) <b>directement sur votre téléphone</b>, sans Telegram. '
-      +'<b>Gratuit et sans compte</b> : installez l\'app <b>ntfy</b> (iOS/Android), abonnez-vous à votre <b>topic privé</b>, '
-      +'et collez-le ici. La notification arrive même app fermée (le pont doit tourner).</p>'
-      +'<div class="fi" style="margin-bottom:8px;"><label>Topic ntfy (ex. moncode-secret-42)</label>'
-      +'<input id="ntfy-topic" class="lic-in" placeholder="moncode-secret-42" autocomplete="off"></div>'
-      +'<div id="ntfy-st" style="font-size:12px;color:var(--text3);margin:6px 0 10px;">—</div>'
-      +'<div style="display:flex;flex-wrap:wrap;gap:7px;">'
-      +'<button class="btn btn-p" onclick="ntfySave()">Enregistrer</button>'
-      +'<button class="btn" onclick="ntfyTest()">➤ Tester</button>'
-      +'</div>'
-      +'<p style="font-size:11px;color:var(--text3);margin:8px 0 0;">📲 App : <code>https://ntfy.sh</code> · Topic privé = une chaîne secrète que vous choisissez. '
-      +'Utilisez un topic <b>imprévisible</b> (jamais votre email) pour que personne d\'autre ne s\'y abonne.</p>'
-    +'</div>';
+    + ntfyCard();
   try{ tgStatus(); }catch(e){}
   try{ tgPushIa(true); }catch(e){}
   try{ ntfyStatus(); }catch(e){}
