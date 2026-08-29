@@ -2819,14 +2819,17 @@ tr:hover td{background:rgba(52,211,153,.035);}
           <div class="fi">
             <label>Objectif de profit (%)</label>
             <input type="number" id="pf-target" value="10" min="0" step="0.5" oninput="pfSave();pfRender()">
+            <div class="rk-note" id="pf-target-amt">= 0 $</div>
           </div>
           <div class="fi">
             <label>Drawdown max (%)</label>
             <input type="number" id="pf-ddmax" value="10" min="0" step="0.5" oninput="pfSave();pfRender()">
+            <div class="rk-note" id="pf-ddmax-amt">= 0 $</div>
           </div>
           <div class="fi">
             <label>DD journalier (%)</label>
             <input type="number" id="pf-ddday" value="5" min="0" step="0.5" oninput="pfSave();pfRender()">
+            <div class="rk-note" id="pf-ddday-amt">= 0 $</div>
           </div>
         </div>
         <div class="rg" style="gap:8px;margin-top:8px;">
@@ -18988,6 +18991,8 @@ function pfCompute(){
   const ddPct=s?s.maxDD:0;                    // drawdown max (cumul) en % du capital
   const ddAmt=cap?ddPct/100*cap:0;
   const targetAmt=cap?cfg.target/100*cap:0;
+  const ddMaxAmt=cap?cfg.ddMax/100*cap:0;      // montant absolu du DD max autorisé
+  const ddDayAmt=cap?cfg.ddDay/100*cap:0;      // montant absolu du DD journalier autorisé
   const split=Math.min(100,Math.max(0,cfg.split||0));
   const traderShare=(100-split)/100;           // part du trader
   const gross=(s?pnl:trades.reduce((a,t)=>a+(parseFloat(t.pnl)||0),0));
@@ -18996,12 +19001,15 @@ function pfCompute(){
   const validated=pct>=cfg.target;
   const ddBroken=cfg.ddMax>0&&ddPct>=cfg.ddMax;
   const targetLeft=Math.max(0,cfg.target-pct);
-  return {cfg,trades,s,cap,pnl,pct,ddPct,ddAmt,targetAmt,split,traderShare,traderAmt,firmAmt,validated,ddBroken,targetLeft};
+  return {cfg,trades,s,cap,pnl,pct,ddPct,ddAmt,targetAmt,ddMaxAmt,ddDayAmt,split,traderShare,traderAmt,firmAmt,validated,ddBroken,targetLeft};
 }
 function pfRender(){
   const c=pfCompute();
   const en=(typeof LANG!=='undefined'&&LANG==='en');
   const fmt=n=>(n==null||isNaN(n))?'—':(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
+  // Montants $ équivalents (Objectif / DD max / DD jour) basés sur le capital.
+  const setAmt=(el,v)=>{const e=document.getElementById(el);if(e)e.textContent='= '+fmt(v);};
+  setAmt('pf-target-amt',c.targetAmt);setAmt('pf-ddmax-amt',-c.ddMaxAmt);setAmt('pf-ddday-amt',-c.ddDayAmt);
   // barre de progression vers la cible
   const pctTarget=c.target>0?Math.min(100,c.pct/c.target*100):0;
   const col=pctTarget>=100?'var(--g)':pctTarget>=60?'var(--gold)':'var(--b)';
@@ -19015,11 +19023,13 @@ function pfRender(){
     +'</div></div>';
   // statut / validation
   let status;
+  const ddMaxS=(c.cfg.ddMax||0)+'% ('+fmt(-c.ddMaxAmt)+')';
+  const ddCurS=c.ddPct.toFixed(2)+'% ('+fmt(-c.ddAmt)+')';
   if(c.validated){status='<div class="al al-s">🎉 <b>'+(en?'Challenge validated — target reached!':'Challenge validé — cible atteinte !')+'</b> '
     +'Profit '+fmt(c.pnl)+' ('+c.pct.toFixed(2)+'%).</div>';}
   else if(c.ddBroken){status='<div class="al al-e">💥 <b>'+(en?'Drawdown exceeded':'Drawdown max dépassé')+'</b> '
-    +'DD actuel '+c.ddPct.toFixed(2)+'% ≥ '+(c.cfg.ddMax||0)+'%.</div>';}
-  else{status='<div class="al al-i">📊 P&L '+fmt(c.pnl)+' ('+c.pct.toFixed(2)+'%) · DD max '+c.ddPct.toFixed(2)+'% / '+(c.cfg.ddMax||0)+'% · '
+    +'DD actuel '+ddCurS+' ≥ '+ddMaxS+'.</div>';}
+  else{status='<div class="al al-i">📊 P&L '+fmt(c.pnl)+' ('+c.pct.toFixed(2)+'%) · DD '+ddCurS+' / '+ddMaxS+' · '
     +(c.cfg.minDays?c.cfg.minDays+' j min':'')+'</div>';}
   document.getElementById('pf-status').innerHTML=status;
   // retrait estimé
