@@ -580,20 +580,23 @@
     C'est fait : vos trades remontent tout seuls.
 
   ▸ Sur MAC
-    MetaTrader 5 fonctionne sous Wine sur Mac, il faut donc installer
-    le petit programme fourni :
+    MetaTrader 5 fonctionne sous Wine sur Mac. Le pont prépare TOUT
+    automatiquement à la première ouverture : il copie l'EA dans le bon
+    dossier, le compile et ouvre MetaTrader 5 pour vous.
 
-      1. Ouvrez MetaTrader 5
-      2. Menu Outils → MetaQuotes Language Editor
-      3. Fichier → Nouveau → Expert Advisor → nommez-le OmniTradeExport
-      4. Effacez tout, collez le contenu de 2-OmniTradeExport.mq5
-      5. Compilez avec la touche F7
-      6. Retour dans MT5 : ouvrez un graphique et glissez OmniTradeExport
-         dessus depuis le Navigateur
-      7. Cochez « Autoriser le trading algorithmique » → OK
-      8. Un petit visage souriant apparaît en haut du graphique
+    Il ne vous reste alors que 2 gestes :
 
-    Il ne passe AUCUN ordre : il lit seulement votre historique.
+      1. Dans MetaTrader 5 : ouvrez un graphique, et glissez
+         OmniTradeExport dessus depuis le panneau « Navigateur »
+      2. Cochez « Autoriser le trading algorithmique » → OK
+         (un petit visage souriant apparaît en haut du graphique)
+
+    Aucune compilation, aucun collage de code, aucune manipulation de
+    dossier : le pont s'en charge. Il ne passe AUCUN ordre : il lit
+    seulement votre historique.
+
+    Si MetaTrader 5 n'est pas installé, le pont vous l'indique et les
+    étapes manuelles classiques restent disponibles (voir le guide PDF).
 
 
 ───────────────────────────────────────────────────────────────────────────

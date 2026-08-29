@@ -371,20 +371,18 @@ const G5 = page(band(5, 'Sauvegardes et synchronisation MetaTrader 5', 'cloud ·
   </ol>
   <div class="tip">Sur Windows, rien à installer de plus : le module est inclus.</div>
 
-  <h3>B. Sur Mac : installer le petit module (5 minutes)</h3>
-  <p>MetaTrader 5 tourne sous Wine sur Mac, on installe donc le module fourni
-  (<code>2-OmniTradeExport.mq5</code>, livré avec OmniTrade Hub).</p>
+  <h3>B. Sur Mac : c'est automatique</h3>
+  <p>MetaTrader 5 tourne sous Wine sur Mac. Le pont prépare <b>tout seul</b> le petit module
+  (<code>OmniTradeExport</code>) au premier lancement : il le copie dans le bon dossier, le
+  <b>compile</b> et <b>ouvre MetaTrader 5</b>. Il ne vous reste que 2 gestes :</p>
   <ol>
-    <li>Ouvrez MetaTrader 5 et connectez-vous au broker.</li>
-    <li>Menu <b>Outils → MetaQuotes Language Editor</b> (ou <b>F4</b>).</li>
-    <li><b>Fichier → Nouveau → Expert Advisor</b> → nommez-le <code>OmniTradeExport</code> → <b>Suivant → Terminer</b>.</li>
-    <li>Effacez tout le code affiché, <b>collez</b> le contenu de <code>2-OmniTradeExport.mq5</code>, puis <b>Compilez (F7)</b>.</li>
-    <li>Retour dans MetaTrader : ouvrez un <b>graphique</b> (n'importe quelle paire), et glissez
+    <li>Dans MetaTrader 5 : ouvrez un <b>graphique</b> (n'importe quelle paire) et <b>glissez</b>
       <code>OmniTradeExport</code> dessus depuis le panneau <b>Navigateur</b>.</li>
     <li>Cochez <b>« Autoriser le trading algorithmique »</b> → <b>OK</b>. Un petit <b>visage souriant</b>
       apparaît en haut du graphique.</li>
-    <li>Dans OmniTrade Hub → <b>MT5</b>, saisissez <b>login</b> + <b>serveur</b>, puis <b>Se connecter à MT5</b>.</li>
   </ol>
+  <div class="tip">Aucune compilation, aucun collage de code : le pont s'occupe de tout.
+  Si MetaTrader 5 n'est pas encore installé, le pont vous prévient et vous guide.</div>
   ${img('05-mt5.png', 'Page MT5 : connexion au compte broker (login, mot de passe, serveur) et espace de synchronisation.', 'max-height:20cm;width:auto;margin:0 auto;display:block;')}
   <div class="warn">Le module <b>ne passe aucun ordre</b> : il lit seulement votre historique (compte, trades,
   positions) et l'écrit sur disque. Laissez le graphique avec le visage souriant <b>ouvert</b>.</div>
