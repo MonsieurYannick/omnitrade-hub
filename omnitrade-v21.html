@@ -3200,6 +3200,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
           <button class="btn" onclick="expCSV()" style="justify-content:flex-start;gap:10px;"><span style="font-size:16px;">📊</span><div><div style="font-weight:700;">Export CSV</div><div style="font-size:10px;color:var(--text3);">Compatible Excel / Google Sheets</div></div></button>
           <button class="btn" onclick="expJSON()" style="justify-content:flex-start;gap:10px;"><span style="font-size:16px;">💾</span><div><div style="font-weight:700;">Backup JSON</div><div style="font-size:10px;color:var(--text3);">Sauvegarde complète</div></div></button>
           <button class="btn" onclick="genReport()" style="justify-content:flex-start;gap:10px;"><span style="font-size:16px;">📋</span><div><div style="font-weight:700;">Rapport HTML</div><div style="font-size:10px;color:var(--text3);">Rapport imprimable</div></div></button>
+          <button class="btn" onclick="expPDF()" style="justify-content:flex-start;gap:10px;"><span style="font-size:16px;">📄</span><div><div style="font-weight:700;">Export PDF du Journal</div><div style="font-size:10px;color:var(--text3);">Tous les trades · prêt à sauvegarder</div></div></button>
           <button class="btn btn-d" onclick="clearAll()" style="justify-content:flex-start;gap:10px;margin-top:6px;"><span style="font-size:16px;">🗑️</span><div><div style="font-weight:700;">Effacer tout</div><div style="font-size:10px;">Irréversible</div></div></button>
         </div>
         <div class="div"></div>
@@ -6926,6 +6927,42 @@ function delGL(id){if(!confirm('Supprimer ?'))return;GL=GL.filter(g=>g.id!==id);
 function expCSV(){if(!T.length){alert('Aucun trade');return;}const h=['id','ticket_id','source','date','paire','marche','direction','entree','sortie','sl','tp','lots','pnl','swap','commission','resultat','rrr','mae','mfe','setup','session','tf','duree','confluences','emotion','score','tags','rule','notes'];const rows=T.map(t=>[t.id,t.ticket_id||'',t.source||'Manuel',t.date,t.pair,t.market,t.direction,t.entry,t.exit,t.sl,t.tp,t.lots,t.pnl,t.swap??'',t.commission??'',t.result,(t.rrr!=null?t.rrr:(gRRR(t)||'')),t.mae,t.mfe,t.setup,t.session,t.tf,t.dur,t.conf,t.emotion,t.score,t.tags,t.rule,(t.notes||'').replace(/,/g,';').replace(/\n/g,' ')].map(v=>String(v??'').replace(/,/g,';')).join(','));const csv=[h.join(','),...rows].join('\n');const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='zellatrack_v3_'+new Date().toISOString().split('T')[0]+'.csv';a.click();}
 function expJSON(){try{if(typeof chatBoot==='function')chatBoot();}catch(e){}const data={trades:T,playbooks:PB,notes:N,goals:GL,rules:RL,accHistory:AH,sessions:SP,mt5Index:mt5.idx,mt5Config:Object.assign({},mt5.cfg,{token:''}),chats:(typeof chatBag!=='undefined'?{cur:chatBag.cur,list:chatBag.list}:null),exported:new Date().toISOString(),version:APP.version,app:APP.full};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='zellatrack_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();}
 function genReport(){const w=window.open('','_blank');w.document.write('<html><head><title>Rapport '+APP.full+'</title></head><body>'+document.getElementById('rep-content').innerHTML+'</body></html>');w.document.close();w.print();}
+
+/* Export du JOURNAL complet en fichier HTML imprimable (→ « Enregistrer en PDF »).
+   Réutilise le rendu du rapport pour le récap ET liste tous les trades. */
+function expPDF(){
+  if(!T||!T.length){alert('Aucun trade à exporter.');return;}
+  const now=new Date();
+  const dateFr=now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const list=(typeof accFilter==='function'?accFilter(allT?allT():T):T)||T;
+  const s=(typeof gS==='function')?gS(list):null;
+  const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,' ');
+  const rows=list.map((t,i)=>
+    '<tr><td>'+(i+1)+'</td><td>'+esc(t.date||'')+'</td><td>'+esc(t.pair||'')+'</td><td>'+esc(t.direction||'')+'</td>'
+    +'<td>'+esc(t.lots||'')+'</td><td>'+esc(t.entry||'')+'</td><td>'+esc(t.exit||'')+'</td>'
+    +'<td class="'+(+t.pnl>=0?'p':'n')+'">'+(+t.pnl>=0?'+':'')+esc((+t.pnl||0).toFixed(2))+'</td>'
+    +'<td>'+esc(t.result||'')+'</td><td>'+esc(t.setup||'')+'</td><td>'+esc(t.session||'')+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Journal — '+APP.full+'</title>'
+    +'<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#0f172a;margin:20px;line-height:1.4}'
+    +'h2{font-size:18px;margin:0 0 4px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}'
+    +'.p{color:#16a34a}.n{color:#dc2626}table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}'
+    +'th,td{border:1px solid #e2e8f0;padding:5px 7px;text-align:left}th{background:#f1f5f9;font-weight:700}'
+    +'.sum{display:flex;gap:18px;flex-wrap:wrap;background:#f1f5f9;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:6px}'
+    +'</style></head><body>'
+    +'<h2>📓 Journal de Trading — '+APP.full+'</h2><div class="sub">Généré le '+dateFr+' · '+list.length+' trade(s)</div>'
+    +'<div class="sum"><b>PnL : <span class="'+(s&&s.pnl>=0?'p':'n')+'">'+(s?(s.pnl>=0?'+':'')+s.pnl.toFixed(2):'0')+'</span></b>'
+    +'<b>Win Rate : '+(s?s.wr.toFixed(1)+'%':'—')+'</b><b>Profit Factor : '+(s?(s.pf>99?'∞':s.pf.toFixed(2)):'—')+'</b>'
+    +'<b>Trades : '+list.length+'</b></div>'
+    +'<table><thead><tr><th>#</th><th>Date</th><th>Paire</th><th>Dir.</th><th>Lots</th><th>Entrée</th><th>Sortie</th><th>PnL</th><th>Rs.</th><th>Setup</th><th>Session</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='journal-omnitrade-'+now.toISOString().slice(0,10)+'.html';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
 function dlTpl(){const tpl=`date,paire,marche,direction,entree,sortie,sl,tp,lots,pnl,resultat,mae,mfe,setup,session,tf,duree,confluences,emotion,score,tags,rule,notes\n2026-05-01T09:30,EURUSD,Forex,Long,1.08250,1.08650,1.08050,1.08850,0.10,40,Win,5,48,ICT Order Block,London,H1,45,3,Calme,8,A+,Oui,Beau setup OB H1`;const blob=new Blob([tpl],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='zellatrack_v3_template.csv';a.click();}
 function hFI(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{if(f.name.endsWith('.json')){const d=JSON.parse(e.target.result);let added=0,skip=0;if(d.trades)d.trades.forEach(t=>{const dupe=(t.ticket_id&&T.some(x=>x.ticket_id===t.ticket_id))||(t.id&&T.some(x=>x.id===t.id));if(dupe){skip++;return;}T.push(t);added++;});if(d.playbooks)PB=[...PB,...d.playbooks];if(d.notes)N=[...N,...d.notes];if(d.goals)GL=[...GL,...d.goals];if(d.sessions)SP=[...SP,...d.sessions];if(d.mt5Index)mt5.idx=Object.assign({},d.mt5Index,mt5.idx);if(d.mt5Config)mt5.cfg=Object.assign({},mt5.cfg,d.mt5Config,{token:mt5.cfg.token});if(d.chats&&typeof chatThreadsImport==='function')chatThreadsImport(d.chats);mt5Persist();sv();refreshAll();document.getElementById('imp-res').innerHTML=`<div class="al al-s">✅ ${added} trades importés du backup JSON${skip?` · ${skip} doublon(s) ignoré(s)`:''}.</div>`;}else{const lines=e.target.result.split('\n').filter(l=>l.trim());const headers=lines[0].split(',');let cnt=0;for(let i=1;i<lines.length;i++){const vals=lines[i].split(',');if(vals.length<3)continue;const idx=h=>headers.indexOf(h);T.push({id:Date.now().toString()+i,date:vals[idx('date')]||'',pair:vals[idx('paire')]||vals[1]||'',market:vals[idx('marche')]||'Forex',direction:vals[idx('direction')]||'Long',entry:vals[idx('entree')]||'',exit:vals[idx('sortie')]||'',sl:vals[idx('sl')]||'',tp:vals[idx('tp')]||'',lots:vals[idx('lots')]||'',pnl:parseFloat(vals[idx('pnl')])||0,result:vals[idx('resultat')]||'',mae:vals[idx('mae')]||'',mfe:vals[idx('mfe')]||'',setup:vals[idx('setup')]||'',session:vals[idx('session')]||'',tf:vals[idx('tf')]||'',dur:vals[idx('duree')]||'',conf:vals[idx('confluences')]||'',emotion:vals[idx('emotion')]||'',score:vals[idx('score')]||'',tags:vals[idx('tags')]||'',rule:vals[idx('rule')]||'',notes:vals[idx('notes')]||''});cnt++;}sv();refreshAll();document.getElementById('imp-res').innerHTML=`<div class="al al-s">✅ ${cnt} trades importés du CSV.</div>`;}}catch(err){document.getElementById('imp-res').innerHTML=`<div class="al al-e">❌ Erreur: ${err.message}</div>`;}};r.readAsText(f);}
 function clearAll(){if(!confirm('Effacer TOUT ? Irréversible.'))return;T=[];PB=[];N=[];GL=[];AH=[];SP=[];mt5.idx={};mt5.positions=[];mt5.stats={imported:0,dup:0,updated:0,runs:0};try{localStorage.removeItem('zt3_chat');localStorage.removeItem('zt3_chat_ctx');localStorage.removeItem('zt3_chat_threads');if(typeof chatBoot==='function')chatBoot();}catch(e){}mt5Persist();sv();refreshAll();}
