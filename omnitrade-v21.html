@@ -2156,11 +2156,12 @@ tr:hover td{background:rgba(52,211,153,.035);}
 .login-stage{position:relative;perspective:1200px;height:440px;margin:6px 0 4px;
   display:flex;align-items:center;justify-content:center;cursor:grab;}
 .login-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity 1s;}
+  opacity:0;transition:opacity 1s;perspective:1000px;}
 .login-slide.on{opacity:1;}
 .login-slide img{width:100%;max-width:640px;height:auto;border-radius:16px;border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 46px 100px rgba(0,0,0,.65);transform-style:preserve-3d;will-change:transform;
-  transition:transform .08s ease-out;}
+  box-shadow:0 46px 100px rgba(0,0,0,.65);transform-style:preserve-3d;will-change:transform;cursor:grab;}
+.login-slide-cap{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:13px;
+  color:#cfe0d8;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.7);}
 .login-slide-cap{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:13px;
   color:#cfe0d8;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.7);}
 @keyframes loginSlideFade{0%{opacity:0}8%{opacity:1}92%{opacity:1}100%{opacity:0}}
@@ -18906,7 +18907,7 @@ function ntfyStatus(){
   var st = document.getElementById('ntfy-st');
   if (!st) return;
   st.textContent = 'Chargement…';
-  tgApi('ntfy/status').then(function(j){
+  fetch(mkApi('ntfy/status',{})).then(function(r){return r.json();}).then(function(j){
     if (!j || !j.ok){ st.textContent = 'Pont injoignable.'; return; }
     var t = document.getElementById('ntfy-topic');
     if (t && j.topic && !t.value) t.value = j.topic;
@@ -18919,9 +18920,9 @@ function ntfySave(){
   var st = document.getElementById('ntfy-st');
   if (!topic){ if (st) st.textContent = 'Choisissez un topic privé (ex. code secret).'; return; }
   if (st) st.textContent = 'Enregistrement…';
-  tgApi('ntfy/set', {method:'POST', headers:{'Content-Type':'application/json'},
+  fetch(mkApi('ntfy/set',{}),{method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({topic: topic, on: true})
-  }).then(function(j){
+  }).then(function(r){return r.json();}).then(function(j){
     if (j && j.ok){
       if (st) st.textContent = '✅ Topic enregistré — un test vient d\'être envoyé.';
       ntfyTest();
@@ -18931,7 +18932,7 @@ function ntfySave(){
 function ntfyTest(){
   var st = document.getElementById('ntfy-st');
   if (st) st.textContent = 'Envoi du test…';
-  tgApi('ntfy/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}).then(function(j){
+  fetch(mkApi('ntfy/test',{}),{method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}).then(function(r){return r.json();}).then(function(j){
     if (st) st.textContent = (j && j.ok) ? '✅ Test envoyé. Regardez ntfy sur votre téléphone.' : ((j && j.error) || 'échec');
   }).catch(function(){ if (st) st.textContent = 'Pont injoignable.'; });
 }
@@ -19463,8 +19464,9 @@ function pwCfg(){
   }catch(e){}
 }
 function pwStatus(){
+  // Lit l'état du robot SANS déclencher de scan (léger, pas d'appel réseau).
   try{
-    fetch(mkApi('prop/watch',{})).then(function(r){return r.json();}).then(function(j){
+    fetch(mkApi('prop/watch-state',{})).then(function(r){return r.json();}).then(function(j){
       const on=document.getElementById('pw-on');
       if(on&&j&&j.ok)on.checked=!!j.on;
     }).catch(function(){});
@@ -23945,21 +23947,23 @@ window.__LOGIN_SLIDES=[{"id":"dashboard","cap":"Dashboard","data":"data:image/jp
   if(!slides.length)return;
   function show(n){if(slides[cur])slides[cur].classList.remove("on");cur=n%slides.length;if(slides[cur])slides[cur].classList.add("on");}
   show(0);setInterval(function(){show(++i);},4200);
-  // Tilt 3D interactif : la carte suit la souris.
-  var img=null, hf=false;
-  function bind(){img=slides[cur]?slides[cur].querySelector("img"):null;hf=!!img;}
-  bind();
+  // Tilt 3D interactif : la carte active suit la souris.
+  function activeImg(){var s=box.querySelector(".login-slide.on img");return s||null;}
   box.addEventListener("mousemove",function(ev){
-    if(!hf||!img){bind();if(!hf)return;}
+    var img=activeImg(); if(!img)return;
     var r=box.getBoundingClientRect();
-    var x=(ev.clientX-r.left)/r.width, y=(ev.clientY-r.top)/r.height;
+    var x=Math.min(1,Math.max(0,(ev.clientX-r.left)/r.width));
+    var y=Math.min(1,Math.max(0,(ev.clientY-r.top)/r.height));
     var ry=((x-.5)*-16).toFixed(2);      // gauche/droite
     var rx=((y-.5)*12).toFixed(2);       // haut/bas
-    img.style.transform="rotateX("+rx+"deg) rotateY("+ry+"deg) scale(1.0)";
+    img.style.transform="rotateX("+rx+"deg) rotateY("+ry+"deg) scale(1.02)";
   });
   box.addEventListener("mouseleave",function(){
-    if(img)img.style.transform="rotateX(0deg) rotateY(0deg) scale(1)";
+    var img=activeImg(); if(img)img.style.transform="rotateX(0deg) rotateY(0deg) scale(1)";
   });
+  // Applique un léger tilt au départ pour donner du relief même sans souris.
+  function baseTilt(){var img=activeImg(); if(img)img.style.transform="rotateX(10deg) rotateY(-8deg) scale(1)";}
+  baseTilt(); setInterval(baseTilt,4400);
 })();
 </script>
 </body>

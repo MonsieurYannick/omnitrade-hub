@@ -9819,6 +9819,15 @@ def api_prop_watch():
     return jsonify(r)
 
 
+@app.get("/api/prop/watch-state")
+def api_prop_watch_state():
+    """État du robot de veille SANS déclencher de scan (léger, pas de réseau)."""
+    _pw_load()
+    return jsonify({"ok": True, "on": PROP_WATCH.get("on"),
+                    "interval": PROP_WATCH.get("interval"),
+                    "firms": PROP_WATCH.get("my_firms") or []})
+
+
 @app.post("/api/prop/watch-config")
 def api_prop_watch_config():
     """Configure le robot de veille : on/off, intervalle, firmes à surveiller."""
