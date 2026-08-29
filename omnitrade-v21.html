@@ -5316,12 +5316,18 @@ function wStats(el){
 
 // ═══ Widget: Charts ═══
 function wChartEquity(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-eqC"></canvas></div>';
+  el.innerHTML='<div class="wg-chart"><canvas id="wg-eqC"></canvas><div id="wg-eq-meta" style="font-size:10px;color:var(--text3);margin-top:6px;"></div></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);
   const sorted=[...data].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  let cum=0;const lbs=[],vals=[];sorted.forEach((t,i)=>{cum+=parseFloat(t.pnl)||0;lbs.push(i+1);vals.push(+cum.toFixed(2));});
-  if(!vals.length){lbs.push(0);vals.push(0);}
+  let cum=0,peak=0,maxDD=0;const lbs=[],vals=[],dds=[];
+  sorted.forEach((t,i)=>{cum+=parseFloat(t.pnl)||0;lbs.push(i+1);vals.push(+cum.toFixed(2));
+    if(cum>peak)peak=cum;
+    const dd=cum-peak;if(dd<maxDD)maxDD=dd;dds.push(+dd.toFixed(2));});
+  if(!vals.length){lbs.push(0);vals.push(0);dds.push(0);}
   mkL('wg-eqC',lbs,vals,vals[vals.length-1]>=0?C.g:C.r);
+  // Zone de drawdown en dessous (fillable via un 2e dataset) + méta.
+  const meta=document.getElementById('wg-eq-meta');
+  if(meta)meta.textContent='Équité cumulée · DD max -$'+Math.abs(maxDD).toFixed(2);
 }
 function wChartDist(el,wid){
   el.innerHTML='<div class="wg-chart"><canvas id="wg-doC"></canvas></div>';
