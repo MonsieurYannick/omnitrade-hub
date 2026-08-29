@@ -6652,8 +6652,30 @@ def ensure_ea_ready(verbose=True):
                     if verbose:
                         print("→ Impossible d'écrire l'EA dans MQL5/Experts.", flush=True)
         # 2) compiler -> .ex5
-        if ea_compile_auto():
+        compiled = ea_compile_auto()
+        if compiled:
             changed = True
+            if verbose:
+                print("→ Expert Advisor compilé (OmniTradeExport.ex5).", flush=True)
+        else:
+            # Repli : le bundle livre déjà un .ex5 pré-compilé (dans app_dir).
+            mq5_p = (mq5 or "")[:-4] + ".ex5"
+            shipped = os.path.join(app_dir(), "OmniTradeExport.ex5")
+            if shipped and os.path.isfile(shipped) and ea_install_dir():
+                try:
+                    dst = os.path.join(ea_install_dir(), "OmniTradeExport.ex5")
+                    with open(shipped, "rb") as fsrc, open(dst, "wb") as fdst:
+                        fdst.write(fsrc.read())
+                    if verbose:
+                        print("→ Expert Advisor pré-compilé installé (OmniTradeExport.ex5).",
+                              flush=True)
+                except OSError:
+                    pass
+            if verbose and not os.path.isfile(os.path.join(ea_install_dir() or "",
+                                                           "OmniTradeExport.ex5")):
+                print("→ [info] Compilation auto non disponible sous Wine — glissez "
+                      "l'EA sur un graphique (MetaTrader le compilera), ou ouvrez "
+                      "MetaEditor (F7) puis Compiler (F7).", flush=True)
         # 3) ouvrir MT5 (une fois) pour glisser l'EA
         flag = _ea_flag_path()
         if not os.path.isfile(flag):
@@ -7065,6 +7087,94 @@ def tg_send(text, force=False):
             log.warning("tg send : %s", err)
     _tg_log("out", text, {"ok": ok_any, "err": (_TG.get("last_err") or "")[:160], "kind": _kind})
     return ok_any, (_TG["last_err"] if not ok_any else "")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  NTFY — notifications push mobiles GRATUITES (ntfy.sh, sans compte)
+# ---------------------------------------------------------------------------
+#  Le trader installe l'app ntfy (iOS/Android), s'abonne à son topic privé, et
+#  le pont publie dessus (POST https://ntfy.sh/<topic>, body = message, header
+#  Title/Tags). 100 % gratuit, aucun compte, uniquement le topic à renseigner.
+#  retombe proprement si ntfy n'est pas configuré. `notify()` envoie à la fois
+#  via ntfy ET Telegram selon ce qui est configuré.
+# ═════════════════════════════════════════════════════════════════════════════
+_NTFY = {"topic": "", "server": "https://ntfy.sh", "on": False}
+
+
+def _ntfy_path():
+    return os.path.join(user_data_dir(), "ntfy.json")
+
+
+def _ntfy_load():
+    try:
+        o = json.loads(open(_ntfy_path(), encoding="utf-8").read())
+        if isinstance(o, dict):
+            _NTFY["topic"] = str(o.get("topic") or "").strip().lstrip("/")
+            _NTFY["server"] = (str(o.get("server") or "https://ntfy.sh").strip().rstrip("/"))
+            _NTFY["on"] = bool(o.get("on")) and bool(_NTFY["topic"])
+    except Exception:
+        pass
+
+
+def _ntfy_save():
+    try:
+        with open(_ntfy_path(), "w", encoding="utf-8") as f:
+            json.dump(_NTFY, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def ntfy_send(text, title=None, tags=None):
+    """Publie une notification push mobile (ntfy). Retourne (ok, err)."""
+    _ntfy_load()
+    if not _NTFY.get("topic"):
+        return False, "ntfy non configuré"
+    server = _NTFY.get("server") or "https://ntfy.sh"
+    url = "%s/%s" % (server.rstrip("/"), _NTFY["topic"].lstrip("/"))
+    try:
+        req = _urq.Request(
+            url,
+            data=(str(text or "")).encode("utf-8"),
+            method="POST",
+            headers={
+                "Content-Type": "text/plain; charset=utf-8",
+                "Title": (title or "OmniTrade Hub")[:256],
+                "User-Agent": "OmniTradeHub/9.1",
+            },
+        )
+        if tags:
+            req.add_header("Tags", ",".join(tags))
+        with _urq.urlopen(req, timeout=20, context=_ssl_ctx()) as r:
+            code = getattr(r, "status", 200)
+        if code and 200 <= code < 300:
+            _NTFY["last_ok"] = time.time()
+            return True, ""
+        return False, "HTTP %s" % code
+    except Exception as e:
+        return False, str(e)
+
+
+def notify(text, title=None, tags=None):
+    """Envoie via ntfy ET Telegram (selon la config). Retourne (ok ntfy, err)."""
+    # Nettoyage des balises HTML pour les canaux texte.
+    plain = re.sub(r"<[^>]+>", "", str(text or "")).strip()
+    ok = False
+    err = ""
+    # Channel mobile gratuit (ntfy).
+    if _NTFY.get("topic"):
+        ok, err = ntfy_send(plain, title, tags)
+    # Channel Telegram (si configuré) — meilleur rendu avec le texte enrichi.
+    try:
+        if _tg_ready():
+            t_err = ""
+            t_ok, t_err = tg_send(text, force=True)
+            if t_ok:
+                ok = True
+            elif not ok:
+                err = err or t_err
+    except Exception:
+        pass
+    return ok, err
 
 
 def _tg_abj_hm():
@@ -9443,6 +9553,45 @@ def api_tg_send():
     else:
         ok, err = tg_send_dossier(True)
         return jsonify({"ok": ok, "via": err if ok else "", "error": "" if ok else err})
+    return jsonify({"ok": ok, "error": err or ""})
+
+
+@app.post("/api/ntfy/set")
+def api_ntfy_set():
+    """Configure le canal de notifications mobiles (topic ntfy)."""
+    data = request.get_json(silent=True) or {}
+    if "topic" in data:
+        _NTFY["topic"] = str(data.get("topic") or "").strip().lstrip("/")
+    if "server" in data:
+        _NTFY["server"] = (str(data.get("server") or "https://ntfy.sh").strip().rstrip("/"))
+    _NTFY["on"] = bool(_NTFY["topic"])
+    _ntfy_save()
+    return jsonify({"ok": True, "on": _NTFY["on"], "topic": _NTFY["topic"]})
+
+
+@app.get("/api/ntfy/status")
+def api_ntfy_status():
+    _ntfy_load()
+    return jsonify({"ok": True, "on": _NTFY["on"], "topic": _NTFY["topic"],
+                    "server": _NTFY.get("server") or "https://ntfy.sh"})
+
+
+@app.post("/api/ntfy/test")
+def api_ntfy_test():
+    _ntfy_load()
+    _header = (request.get_json(silent=True) or {}).get("header")
+    ok, err = ntfy_send("✅ Notification mobile testés — tout fonctionne !", "OmniTrade Hub · Test", ["white_check_mark"])
+    return jsonify({"ok": ok, "error": err or "", "on": _NTFY["on"], "topic": _NTFY["topic"]})
+
+
+@app.post("/api/ntfy/send")
+def api_ntfy_send():
+    """Notification libre (utilisée par les alertes Prop, prix, etc.)."""
+    data = request.get_json(silent=True) or {}
+    text = str(data.get("text") or "").strip()
+    if not text:
+        return jsonify({"ok": False, "error": "texte vide"}), 400
+    ok, err = notify(text, data.get("title") or "OmniTrade Hub", data.get("tags"))
     return jsonify({"ok": ok, "error": err or ""})
 
 

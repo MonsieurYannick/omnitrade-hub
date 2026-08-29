@@ -18575,9 +18575,26 @@ function supRender(){
       +'<button class="btn btn-s" onclick="tgSendKind(\'brief\')">Brief séance</button>'
       +'</div>'
       +'<p style="font-size:11px;color:var(--text3);margin:10px 0 0;">Sur Telegram : écrivez une question (EURUSD, or, session…) — le bot répond sur CE sujet, plus besoin de /radar, ou /brief /radar /biais /sydney /tokyo /londres /ny /dossier /macro /or /cot /cal /news</p>'
+    +'</div>'
+    +'<div class="lic-card">'
+      +'<div class="lic-lbl">📱 Notifications mobiles (ntfy — gratuit, sans Telegram)</div>'
+      +'<p style="font-size:12px;color:var(--text2);line-height:1.65;margin:0 0 10px;">'
+      +'Recevez vos alertes (prix, prop firm, drawdown) <b>directement sur votre téléphone</b>, sans Telegram. '
+      +'<b>Gratuit et sans compte</b> : installez l\'app <b>ntfy</b> (iOS/Android), abonnez-vous à votre <b>topic privé</b>, '
+      +'et collez-le ici. La notification arrive même app fermée (le pont doit tourner).</p>'
+      +'<div class="fi" style="margin-bottom:8px;"><label>Topic ntfy (ex. moncode-secret-42)</label>'
+      +'<input id="ntfy-topic" class="lic-in" placeholder="moncode-secret-42" autocomplete="off"></div>'
+      +'<div id="ntfy-st" style="font-size:12px;color:var(--text3);margin:6px 0 10px;">—</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:7px;">'
+      +'<button class="btn btn-p" onclick="ntfySave()">Enregistrer</button>'
+      +'<button class="btn" onclick="ntfyTest()">➤ Tester</button>'
+      +'</div>'
+      +'<p style="font-size:11px;color:var(--text3);margin:8px 0 0;">📲 App : <code>https://ntfy.sh</code> · Topic privé = une chaîne secrète que vous choisissez. '
+      +'Utilisez un topic <b>imprévisible</b> (jamais votre email) pour que personne d\'autre ne s\'y abonne.</p>'
     +'</div>';
   try{ tgStatus(); }catch(e){}
   try{ tgPushIa(true); }catch(e){}
+  try{ ntfyStatus(); }catch(e){}
 }
 
 function tgApi(path, opt){
@@ -18679,6 +18696,41 @@ function tgSendKind(kind){
     body: JSON.stringify({kind: kind||'dossier'})
   }).then(function(j){
     if (st) st.textContent = (j && j.ok) ? ('Envoyé'+(j.via?(' · '+j.via):'')+'.') : ((j && j.error) || 'échec');
+  }).catch(function(){ if (st) st.textContent = 'Pont injoignable.'; });
+}
+
+/* ═══ NTFY — notifications mobiles gratuites ══════════════════════════════ */
+function ntfyStatus(){
+  var st = document.getElementById('ntfy-st');
+  if (!st) return;
+  st.textContent = 'Chargement…';
+  tgApi('ntfy/status').then(function(j){
+    if (!j || !j.ok){ st.textContent = 'Pont injoignable.'; return; }
+    var t = document.getElementById('ntfy-topic');
+    if (t && j.topic && !t.value) t.value = j.topic;
+    st.textContent = j.on ? ('✅ Connecté · topic '+j.topic) : 'Non configuré — créez un topic privé sur ntfy.sh';
+  }).catch(function(){ st.textContent = 'Pont injoignable.'; });
+}
+function ntfySave(){
+  var inp = document.getElementById('ntfy-topic');
+  var topic = String((inp ? inp.value : '')||'').replace(/[^A-Za-z0-9_-]/g,'').trim();
+  var st = document.getElementById('ntfy-st');
+  if (!topic){ if (st) st.textContent = 'Choisissez un topic privé (ex. code secret).'; return; }
+  if (st) st.textContent = 'Enregistrement…';
+  tgApi('ntfy/set', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({topic: topic, on: true})
+  }).then(function(j){
+    if (j && j.ok){
+      if (st) st.textContent = '✅ Topic enregistré — un test vient d\'être envoyé.';
+      ntfyTest();
+    } else { if (st) st.textContent = (j && j.error) || 'Échec.'; }
+  }).catch(function(){ if (st) st.textContent = 'Pont injoignable.'; });
+}
+function ntfyTest(){
+  var st = document.getElementById('ntfy-st');
+  if (st) st.textContent = 'Envoi du test…';
+  tgApi('ntfy/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}).then(function(j){
+    if (st) st.textContent = (j && j.ok) ? '✅ Test envoyé. Regardez ntfy sur votre téléphone.' : ((j && j.error) || 'échec');
   }).catch(function(){ if (st) st.textContent = 'Pont injoignable.'; });
 }
 
