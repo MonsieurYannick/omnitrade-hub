@@ -7188,9 +7188,10 @@ def notify(text, title=None, tags=None):
 # ═════════════════════════════════════════════════════════════════════════════
 PROP_WATCH = {
     "on": True,
-    "interval": 3600,          # 1 h entre deux scans
+    "interval": 21600,         # 6 h entre deux scans (limite le rate-limit DDG)
     "last_scan": 0,
     "last_seen": {},           # {slug: titre} pour ne pas re-notifier deux fois
+    "my_firms": [],
     "sources": [               # flux RSS / endpoints d'actualité (stables, testés 08/2026)
         "https://www.fxstreet.com/rss/news",
         "https://www.investing.com/rss/news_25.rss",
@@ -7214,6 +7215,7 @@ def _pw_load():
                     PROP_WATCH["last_seen"] = o["last_seen"]
                 if isinstance(o.get("sources"), list) and o["sources"]:
                     PROP_WATCH["sources"] = o["sources"]
+                PROP_WATCH["my_firms"] = o.get("my_firms") or []
     except Exception:
         pass
 
@@ -7221,8 +7223,10 @@ def _pw_load():
 def _pw_save():
     try:
         with open(os.path.join(user_data_dir(), "propwatch.json"), "w", encoding="utf-8") as f:
-            json.dump({k: PROP_WATCH[k] for k in ("on", "interval", "last_scan", "last_seen", "sources")},
-                      f, ensure_ascii=False, indent=2)
+            json.dump(
+                {k: PROP_WATCH[k] for k in ("on", "interval", "last_scan", "last_seen", "sources")}
+                | {"my_firms": PROP_WATCH.get("my_firms") or []},
+                f, ensure_ascii=False, indent=2)
     except Exception:
         pass
 
@@ -7281,40 +7285,79 @@ _PW_RULE_WORDS = ("rule", "rulebook", "update", "change", "new", "split", "drawd
                   "consistency", "payout", "refund", "leverage", "raise", "cut")
 
 
+def _pw_ddg_search(query, limit=6):
+    """Recherche web DuckDuckGo (HTML, sans clé). Retourne [{text, link}].
+
+    Le HTML de duckduckgo.com lien les résultats via /l/?uddg=<url encode>.
+    On décode l'URL réelle et on garde les titres. Une limite de requêtes
+    trop agressive ferait bloquer l'IP ; on reste modéré et on gère le blocage.
+    """
+    import urllib.parse as _qp
+    out = []
+    try:
+        url = "https://html.duckduckgo.com/html/?q=" + _qp.quote(query)
+        html = _mkt_get(url, timeout=20)
+        # Blocage DDG : page vide ou message « anomaly » → on s'arrête proprement.
+        if not html or "anomaly" in html.lower() or "blocked" in html.lower():
+            return out
+        for m in re.finditer(r'class="result__a" href="([^"]+)"[^>]*>(.*?)</a>', html, re.S):
+            href = m.group(1)
+            title = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+            if not title:
+                continue
+            qs = _qp.parse_qs(_qp.urlparse(href).query) if "/l/" in href else {}
+            link = qs.get("uddg", [href])[0]
+            if link.startswith("//"):
+                link = "https:" + link
+            out.append({"text": title, "link": link})
+            if len(out) >= limit:
+                break
+    except Exception:
+        pass
+    return out
+
+
 def prop_watch_scan(force=False):
-    """Scanne les sources et retourne les articles mentionnant les firmes du trader."""
+    """Recherche les dernières règles/actualités des firmes du trader (web).
+
+    Pour chaque firme détectée, on interroge DuckDuckGo (web, gratuit). On retient
+    les résultats qui ressemblent à un changement de règles et on notifie les
+    nouveautés (une fois chacune). On espace volontairement les requêtes pour ne
+    pas se faire bloquer (rate-limit DDG). Un scan périodique + un bouton manuel.
+    """
     _pw_load()
     if not PROP_WATCH.get("on"):
         return {"ok": True, "on": False, "articles": []}
     now = time.time()
-    if not force and now - (PROP_WATCH.get("last_scan") or 0) < (PROP_WATCH.get("interval") or 3600):
+    if not force and now - (PROP_WATCH.get("last_scan") or 0) < (PROP_WATCH.get("interval") or 21600):
         return {"ok": True, "on": True, "articles": [], "throttled": True}
     firms = _pw_firm_names()
     if not firms:
         return {"ok": True, "articles": [], "firms": []}
     found = []
     seen = set()
-    for src in (PROP_WATCH.get("sources") or []):
-        if not src:
+    # Détection de blocage : si 2 firmes consécutives ne renvoient rien, on s'arrête.
+    empty_streak = 0
+    for firm in firms:
+        # Une seule requête par firme (le plus efficace) ; requête ciblée.
+        q = '"%s" prop firm rules changed' % firm
+        res = _pw_ddg_search(q)
+        if not res:
+            empty_streak += 1
+            if empty_streak >= 2:
+                break            # probablement rate-limit : on stoppe le scan
+            time.sleep(2)
             continue
-        try:
-            xml = _mkt_get(src, timeout=20)
-        except Exception:
-            continue
-        for it in _pw_parse_rss(xml):
-            hay = (it["t"] + " " + it["l"]).lower()
-            hit = [f for f in firms if f in hay]
-            if not hit:
-                continue
-            key = (hit[0] + "|" + it["t"]).lower()
+        empty_streak = 0
+        for it in res:
+            key = (firm + "|" + it["text"]).lower()
             if key in seen:
                 continue
             seen.add(key)
-            rule_like = any(w in it["t"].lower() for w in _PW_RULE_WORDS)
-            found.append({
-                "text": it["t"], "link": it["l"], "date": it["d"],
-                "firm": hit[0], "rule_like": rule_like,
-            })
+            rule_like = any(w in it["text"].lower() for w in _PW_RULE_WORDS)
+            found.append({"text": it["text"], "link": it["link"], "date": "",
+                          "firm": firm, "rule_like": rule_like})
+        time.sleep(2)            # espacement pour limiter le rate-limit.
     PROP_WATCH["last_scan"] = now
     _pw_save()
     # Notifie les nouveautés (une fois chacune) qui ressemblent à des règles.
@@ -7326,12 +7369,12 @@ def prop_watch_scan(force=False):
         if a.get("rule_like"):
             try:
                 okn, _err = notify(
-                    "📋 PROPFIRM — " + a["firm"].upper() + " :\n" + a["text"],
+                    "📋 PROPFIRM — " + a["firm"].upper() + " :\n" + a["text"] + "\n" + (a.get("link") or ""),
                     "OmniTrade Hub · Veille prop firm", tags=["memo"])
             except Exception:
                 pass
     _pw_save()
-    return {"ok": True, "on": True, "articles": found, "firms": list(firms)}
+    return {"ok": True, "on": True, "articles": found, "firms": list(firms), "throttled": False}
 
 
 def _pw_detect_scheduled():
@@ -9789,20 +9832,7 @@ def api_prop_watch_config():
             pass
     # Firmes explicites à surveiller ("mes prop firms").
     if "my_firms" in data and isinstance(data.get("my_firms"), list):
-        try:
-            _pw_save()  # vide d'abord le fichier existant pour y écrire proprement
-            p = os.path.join(user_data_dir(), "propwatch.json")
-            o = {}
-            if os.path.exists(p):
-                try:
-                    o = json.loads(open(p, encoding="utf-8").read())
-                except Exception:
-                    o = {}
-            o["my_firms"] = [str(x).strip() for x in data.get("my_firms") if str(x).strip()]
-            with open(p, "w", encoding="utf-8") as f:
-                json.dump(o, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+        PROP_WATCH["my_firms"] = [str(x).strip() for x in data.get("my_firms") if str(x).strip()]
     _pw_save()
     return jsonify({"ok": True, "on": PROP_WATCH.get("on"),
                     "interval": PROP_WATCH.get("interval"),

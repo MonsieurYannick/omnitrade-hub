@@ -2866,6 +2866,27 @@ tr:hover td{background:rgba(52,211,153,.035);}
       <div id="pf-progress" style="margin-bottom:12px;"></div>
       <div id="pf-status"></div>
     </div>
+
+    <!-- ══ ROBOT DE VEILLE DES RÈGLES ══ -->
+    <div class="card" style="margin-top:14px;">
+      <div class="ch">
+        <span class="ct">🤖 Veille automatique des règles</span>
+        <div class="fs">
+          <button class="btn btn-s" onclick="pwScan()">🔍 Vérifier maintenant</button>
+          <label class="chip" style="cursor:pointer;"><input type="checkbox" id="pw-on" style="display:none;" onchange="pwCfg()">robot actif</label>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin:0 0 10px;line-height:1.6;">
+        Le pont recherche les <b>nouveaux changements de règles</b> de vos prop firms sur le web
+        (DuckDuckGo, gratuit) et vous notifie (mobile + Telegram) dès qu'il en trouve un concernant
+        <b>votre</b> challenge. Les firmes suivies sont celles de votre compte MT5 + la liste ci-dessous.
+      </p>
+      <div class="fi" style="margin-bottom:8px;">
+        <label>Firmes à surveiller (séparées par des virgules)</label>
+        <input type="text" id="pw-firms" class="lic-in" placeholder="FTMO, FundingPips, The5ers…" onchange="pwCfg()">
+      </div>
+      <div id="pw-res" style="font-size:12px;color:var(--text2);">—</div>
+    </div>
   </div>
 
   <!-- ═══ NOTES ═══ -->
@@ -19259,7 +19280,60 @@ if(typeof window!=='undefined'){
   window.addEventListener('load',()=>{setTimeout(()=>{try{pfCheckAlerts();}catch(e){}},3000);
     setInterval(()=>{try{pfCheckAlerts();}catch(e){}},90000);});
 }
-// Modules dont les métriques dépendent directement du jeu de trades : ils sont
+
+/* ═══ ROBOT DE VEILLE PROP FIRM (côté app) ═══════════════════════════════════ */
+function pwCfg(){
+  const inp=document.getElementById('pw-firms');
+  const on=document.getElementById('pw-on');
+  const firms=(inp&&inp.value?inp.value:'').split(',').map(s=>s.trim()).filter(Boolean);
+  const body={on:!!(on&&on.checked)};
+  if(firms.length)body.my_firms=firms;
+  try{
+    fetch(mkApi('prop/watch-config',{}),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(function(){});
+  }catch(e){}
+}
+function pwStatus(){
+  try{
+    fetch(mkApi('prop/watch',{})).then(function(r){return r.json();}).then(function(j){
+      const on=document.getElementById('pw-on');
+      if(on&&j&&j.ok)on.checked=!!j.on;
+    }).catch(function(){});
+  }catch(e){}
+}
+function pwScan(){
+  const res=document.getElementById('pw-res');
+  if(res)res.innerHTML='<div class="al">🔍 Recherche des dernières règles…</div>';
+  let firms='';
+  try{
+    const inp=document.getElementById('pw-firms');
+    if(inp&&inp.value){firms=inp.value;}
+    else{
+      const f=(typeof propDetect==='function')?propDetect():null;
+      if(f&&f.name)firms=f.name;
+    }
+    if(firms){try{fetch(mkApi('prop/watch-config',{}),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({my_firms:firms.split(',').map(function(s){return s.trim();}).filter(Boolean)})}).catch(function(){});}catch(e){}}
+  }catch(e){}
+  fetch(mkApi('prop/watch',{force:1})).then(function(r){return r.json();}).then(function(j){
+    if(!res)return;
+    if(!j||!j.ok){res.innerHTML='<div class="al al-e">Pont injoignable.</div>';return;}
+    const arts=j.articles||[];
+    if(!arts.length){
+      res.innerHTML='<div class="al al-i">Aucune règle récente trouvée pour vos firmes'+(j.firms&&j.firms.length?(' ('+j.firms.join(', ')+')'):'')+'. Réessayez plus tard.</div>';return;
+    }
+    res.innerHTML='<div class="al al-s">✅ '+arts.length+' résultat(s) sur '+(j.firms||[]).join(', ')+'</div>'
+      +arts.slice(0,8).map(function(a){
+        return '<div style="font-size:12px;padding:7px 0;border-bottom:1px solid var(--border);line-height:1.5;">'
+          +'<span class="chip" style="margin-right:6px;">'+mkEsc((a.firm||'').toUpperCase())+'</span>'
+          +(a.rule_like?'<span style="color:var(--gold);font-size:10px;">règles</span> ':'')
+          +(a.link?'<a href="'+mkEsc(a.link)+'" target="_blank" rel="noopener" style="color:var(--b);">':'')+mkEsc(a.text)+
+          (a.link?'</a>':'')+'</div>';
+      }).join('');
+  }).catch(function(){ if(res)res.innerHTML='<div class="al al-e">Recherche impossible (connexion).</div>'; });
+}
+if(typeof window!=='undefined'){
+  window.addEventListener('load',()=>{setTimeout(()=>{try{pwStatus();}catch(e){}},2500);});
+}
+
 // systématiquement recalculés à l'arrivée de données MT5, même en arrière-plan,
 // afin qu'aucun onglet ne conserve d'anciennes valeurs.
 var DATA_MODULES=['dashboard','journal','analytics','calendrier','rapport','objectifs','playbook'];
