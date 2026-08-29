@@ -173,6 +173,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   letter-spacing:1px;line-height:1;font-variant-numeric:tabular-nums;}
 .wc-date{font-size:11px;color:var(--text2);margin-top:6px;text-transform:capitalize;}
 .wc-motiv{font-size:12.5px;color:var(--text2);margin-bottom:16px;line-height:1.6;}
+/* Modale "Quoi de neuf" */
+.wn-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.wn-badge{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;background:linear-gradient(135deg,var(--g2),var(--bg3));border:1px solid var(--border2);}
+.wn-title{font-size:20px;font-weight:900;line-height:1.2;color:var(--text);}
+.wn-title span{color:var(--g);}
+.wn-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.wn-body{max-height:46vh;overflow-y:auto;text-align:left;font-size:13px;line-height:1.7;
+  color:var(--text2);display:flex;flex-direction:column;gap:12px;padding-right:4px;}
+.wn-item b{color:var(--text);}
+.wn-item .wn-tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;
+  margin-right:7px;vertical-align:middle;}
+.wn-tag.new{background:var(--g2);color:var(--g);border:1px solid rgba(52,211,153,.3);}
+.wn-tag.fix{background:var(--b2);color:var(--b);border:1px solid rgba(56,189,248,.3);}
+.wn-tag.up{background:var(--gold2);color:var(--gold);border:1px solid rgba(212,165,116,.3);}
+@media(max-width:520px){.wn-head{flex-direction:column;text-align:center;}}
 @media(max-width:520px){
   .wc-head{flex-direction:column;text-align:center;gap:11px;}
   .wc-av{width:74px;height:74px;}
@@ -2410,7 +2426,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-inner">
-      <div class="logo-gem"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="logo-gem"><img src="favicon-48.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:10px;"></div>
       <div>
         <div class="logo-name">Omni<em>Trade</em> Hub</div>
         <div class="logo-ver" id="app-ver" title="Version de l'application"></div>
@@ -4901,6 +4917,24 @@ tr:hover td{background:rgba(52,211,153,.035);}
     <div class="mf2" style="justify-content:center;">
       <button class="btn btn-p" onclick="closeWelcome()" data-i18n="welcome_go">
         Accéder au tableau de bord</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: QUOI DE NEUF (changelog à chaque mise à jour) ═══ -->
+<div class="ov" id="wnm">
+  <div class="mo" style="max-width:520px;">
+    <button class="mo-x" onclick="closeWhatNew()">✕</button>
+    <div class="wn-head">
+      <div class="wn-badge">✨</div>
+      <div>
+        <div class="wn-title">Quoi de neuf — <span id="wn-ver"></span></div>
+        <div class="wn-sub">Nouveautés, corrections et améliorations de cette version.</div>
+      </div>
+    </div>
+    <div class="wn-body" id="wn-body"></div>
+    <div class="mf2" style="justify-content:center;margin-top:6px;">
+      <button class="btn btn-p" onclick="closeWhatNew()">C'est noté 👍</button>
     </div>
   </div>
 </div>
@@ -7493,6 +7527,48 @@ function welcomeMaybe(){
   let seen=false;
   try{seen=sessionStorage.getItem(WELCOME_KEY)==='1';}catch(e){}
   if(!seen)setTimeout(openWelcome,450);
+}
+
+/* ═══ QUOI DE NEUF — changelog à chaque mise à jour ══════════════════════════
+   Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
+   l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
+const WHATSNEW = [
+  { v:'9.1', items:[
+    {tag:'new', txt:'<b>Nouveau login</b> — écran de connexion modernisé (2 colonnes) avec votre nouveau logo.'},
+    {tag:'new', txt:'<b>Compte unique</b> — l\u2019inscription/connexion crée aussi votre compte de sauvegarde cloud (Supabase), et le même e-mail sert pour votre licence.'},
+    {tag:'new', txt:'<b>Slider 3D interactif</b> — aperçu des modules de l\u2019app qui suit la souris.'},
+    {tag:'new', txt:'<b>Module Prop Firm</b> — nouvelles règles réelles par firme/prog (FTMO, FundingPips, FundedNext, Audacity, The5ers), phases P1/P2/Financé, drawdown en $ et en %.'},
+    {tag:'new', txt:'<b>Alertes intelligentes</b> — prix (% / franchissement) et alertes de challenge (cible 50/80/100 %, drawdown 50/80/90 %) via mobile + Telegram.'},
+    {tag:'new', txt:'<b>Robot de veille</b> — recherche les changements de règles de vos prop firms (DuckDuckGo) et vous notifie.'},
+    {tag:'fix', txt:'<b>Notifications mobiles gratuites</b> (ntfy) — sans compte, en plus de Telegram.'},
+    {tag:'fix', txt:'<b>Activation des licences</b> — corrigée (connexion au serveur Supabase).'},
+    {tag:'fix', txt:'<b>Performance</b> — le pont est plus léger/rapide (moins de requêtes au chargement).'},
+  ]},
+];
+const WN_SEEN_KEY='zt3_seen_wn';
+function closeWhatNew(){
+  const ov=document.getElementById('wnm');
+  if(ov)ov.classList.remove('on');
+  try{localStorage.setItem(WN_SEEN_KEY,APP.version);}catch(e){}
+}
+function showWhatNew(){
+  const ov=document.getElementById('wnm');
+  if(!ov)return;
+  const ver=document.getElementById('wn-ver'); if(ver)ver.textContent=APP.version;
+  const body=document.getElementById('wn-body');
+  if(body){
+    const entry=WHATSNEW.find(function(x){return x.v===APP.version;})||WHATSNEW[WHATSNEW.length-1];
+    body.innerHTML=(entry&&entry.items?entry.items:[]).map(function(it){
+      const lbl={new:'Nouveau',fix:'Corrigé',up:'Amélioré'}[it.tag]||'Nouveau';
+      return '<div class="wn-item"><span class="wn-tag '+it.tag+'">'+lbl+'</span>'+it.txt+'</div>';
+    }).join('');
+  }
+  ov.classList.add('on');
+}
+function whatNewMaybe(){
+  let seen='';
+  try{seen=localStorage.getItem(WN_SEEN_KEY)||'';}catch(e){}
+  if(seen!==APP.version)setTimeout(showWhatNew,900);
 }
 
 
@@ -21398,6 +21474,7 @@ themeApply._ready=true;      // à partir d'ici, les graphiques peuvent être re
 themeApply(false);           // synchronise les boutons du sélecteur
 i18nApply();                 // traduit l'interface selon la langue mémorisée
 welcomeMaybe();              // salutation personnalisée (1 fois par session)
+whatNewMaybe();              // "Quoi de neuf" à chaque nouvelle version
 
 // ── Initialisation du module Cloud (Supabase) ──────────────────────────────
 sbLoadCfg(); sbRenderSQL(); sbRenderLog(); sbRenderStats(); sbSetStatus('off');
