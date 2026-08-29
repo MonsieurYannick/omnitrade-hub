@@ -6449,6 +6449,226 @@ def ea_install_dir():
     return None
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+#  INSTALLATION AUTOMATIQUE DE L'EA (correctif « zéro manipulation »)
+# ---------------------------------------------------------------------------
+#  Objectif : à la première ouverture, le pont écrit l'EA dans MQL5/Experts,
+#  le compile via le MetaEditor et ouvre MT5. L'utilisateur n'a plus qu'à
+#  glisser l'EA sur un graphique (geste non automatisable côté MetaTrader).
+#  Réexécuté à chaque démarrage, mais idempotent : si le .ex5 est déjà là,
+#  il ne recompile pas.
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+def _ea_in_experts():
+    """(.mq5, .ex5) présents dans MQL5/Experts ? (None, None) sinon."""
+    exp = ea_install_dir()
+    if not exp:
+        return (None, None)
+    mq5 = os.path.join(exp, "OmniTradeExport.mq5")
+    ex5 = os.path.join(exp, "OmniTradeExport.ex5")
+    return (mq5 if os.path.isfile(mq5) else None,
+            ex5 if os.path.isfile(ex5) else None)
+
+
+def _mt5_base_dirs():
+    """Dossiers racines possibles du terminal MT5 (Wine / Windows / Linux)."""
+    home = os.path.expanduser("~")
+    dirs = []
+    if IS_MACOS:
+        # Habillage Wine officiel MetaQuotes (net.metaquotes.wine.metatrader5)
+        dirs += [
+            os.path.join(home, "Library/Application Support/net.metaquotes.wine.metatrader5",
+                         "drive_c/Program Files/MetaTrader 5"),
+            os.path.join(home, "Library/Application Support/net.metaquotes.wine.metatrader5",
+                         "drive_c/Program Files (x86)/MetaTrader 5"),
+        ]
+        # Variantes brokers (bundle renommé) + CrossOver / PlayOnMac / .wine
+        for pat in [os.path.join(home, "Library/Application Support/*.wine.*",
+                                 "drive_c/Program Files/MetaTrader 5"),
+                    os.path.join(home, "Library/Application Support/MetaTrader 5",
+                                 "Bottles/metatrader5/drive_c/Program Files/MetaTrader 5"),
+                    os.path.join(home, "Library/Application Support/CrossOver/Bottles/*",
+                                 "drive_c/Program Files/MetaTrader 5"),
+                    os.path.join(home, ".wine/drive_c/Program Files/MetaTrader 5")]:
+            dirs += sorted(glob.glob(pat))
+    elif IS_WINDOWS:
+        dirs += [r"C:\Program Files\MetaTrader 5",
+                 r"C:\Program Files (x86)\MetaTrader 5"]
+    else:
+        dirs += [os.path.join(home, ".wine/drive_c/Program Files/MetaTrader 5")]
+    # Dédoublonnage + on ne garde que les dossiers existants
+    seen, out = set(), []
+    for d in dirs:
+        rd = os.path.realpath(d)
+        if rd and rd not in seen and os.path.isdir(rd):
+            seen.add(rd)
+            out.append(rd)
+    return out
+
+
+def _find_mt5_bin(name):
+    """Chemin d'un binaire MT5 (terminal64.exe / metaeditor64.exe) sous la
+    racine d'installation, Windows ou Wine. Retourne None sinon."""
+    if not name:
+        return None
+    for base in _mt5_base_dirs():
+        cand = os.path.join(base, name)
+        if os.path.isfile(cand):
+            return cand
+    return None
+
+
+def _metaeditor_cmd(me_exe, mq5_path):
+    """Commande de compilation silencieuse du .mq5 via MetaEditor."""
+    # metaeditor64.exe /compile:"<fichier>.mq5"  -> produit le .ex5 à côté
+    return [me_exe, "/compile:" + mq5_path, "/log"]
+
+
+def ea_compile_auto():
+    """Compile OmniTradeExport.mq5 via le MetaEditor (Windows ou Wine).
+
+    Retourne True si un .ex5 est présent à l'issue. Ne lève jamais : en cas
+    d'échec, l'utilisateur garde la marche à suivre manuelle.
+    """
+    mq5, _ = _ea_in_experts()
+    if not mq5:
+        return False
+    ex5 = mq5[:-4] + ".ex5"
+    if os.path.isfile(ex5):
+        return True                     # déjà compilé : rien à faire
+    me = _find_mt5_bin("metaeditor64.exe")
+    if not me:
+        me = _find_mt5_bin("metaeditor.exe")
+    if not me:
+        return False                    # MetaEditor introuvable
+    # MetaEditor a besoin de son dossier de travail ; sous Wine on passe par
+    # wine pour un .exe, sinon on l'exécute directement.
+    try:
+        cmd = _metaeditor_cmd(me, mq5)
+        if IS_MACOS or not IS_WINDOWS:
+            # Wine : le binaire est un .exe lancé via le préfixe Wine.
+            prefix = _mt5_wine_prefix()
+            if prefix and os.path.isfile(prefix):
+                cmd = [prefix] + cmd            # wine metaeditor64.exe /compile:...
+        print("→ Compilation de l'EA via MetaEditor…", flush=True)
+        subprocess.run(cmd, timeout=180,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # MetaEditor compile en arrière-plan : on attend un peu la sortie du .ex5
+        for _ in range(15):
+            if os.path.isfile(ex5):
+                break
+            time.sleep(1.0)
+    except Exception as e:
+        log.debug("ea_compile_auto : %s", e)
+    return os.path.isfile(ex5)
+
+
+def _mt5_wine_prefix():
+    """Chemin de l'exécutable wine du préfixe MetaTrader (macOS), sinon None."""
+    if not IS_MACOS:
+        return None
+    home = os.path.expanduser("~")
+    for pat in [os.path.join(home, "Library/Application Support/net.metaquotes.wine.metatrader5",
+                             "drive_c/windows/system32/wine64.exe"),
+                os.path.join(home, "Library/Application Support/net.metaquotes.wine.metatrader5",
+                             "drive_c/windows/system32/wine.exe")]:
+        p = sorted(glob.glob(pat))
+        if p:
+            return p[0]
+    for w in ["/usr/bin/wine64", "/usr/local/bin/wine64", "/opt/homebrew/bin/wine64",
+              "/usr/bin/wine", "/usr/local/bin/wine", "/opt/homebrew/bin/wine"]:
+        if os.path.isfile(w):
+            return w
+    return None
+
+
+def _mt5_mac_app():
+    """Chemin du wrapper MetaTrader 5.app sur macOS, sinon None."""
+    if not IS_MACOS:
+        return None
+    for p in ["/Applications/MetaTrader 5.app",
+              "/Applications/MetaTrader 5.app",
+              os.path.join(os.path.expanduser("~"), "Applications/MetaTrader 5.app")]:
+        if os.path.isdir(p):
+            return p
+    return None
+
+
+def _open_mt5():
+    """Ouvre MetaTrader 5 (macOS .app / start Windows / binaire Wine)."""
+    if IS_MACOS:
+        app = _mt5_mac_app()
+        if app:
+            subprocess.Popen(["open", app])
+            return True
+    term = _find_mt5_bin("terminal64.exe") or _find_mt5_bin("terminal.exe")
+    if not term:
+        return False
+    try:
+        if IS_WINDOWS:
+            subprocess.Popen([term])
+        else:
+            subprocess.Popen([term])   # Linux : exe via binfmt/Wine si configuré
+        return True
+    except Exception:
+        return False
+
+
+def _ea_flag_path():
+    """Fichier marqueur : évite de rouvrir MT5 à chaque démarrage."""
+    both = _ea_in_experts()
+    ex5 = both[1]
+    if ex5:
+        return ex5 + ".done"            # posé une fois le .ex5 présent
+    return os.path.join(user_data_dir(), "ea_installed.flag")
+
+
+def ensure_ea_ready(verbose=True):
+    """Séquence « zéro manipulation » au démarrage du pont.
+
+    1. Installe le .mq5 dans MQL5/Experts si absent.
+    2. Le compile via MetaEditor (si le .ex5 manque) → .ex5.
+    3. Ouvre MT5 pour que l'utilisateur glisse l'EA (une seule fois).
+    Idempotent : ne recompile pas si le .ex5 est déjà présent.
+    """
+    if NATIVE_API:
+        return                          # mode API native : EA inutile
+    try:
+        mq5, ex5 = _ea_in_experts()
+        changed = False
+        # 1) écrire la source si absente de MQL5/Experts
+        if not mq5:
+            exp = ea_install_dir()
+            if exp:
+                try:
+                    with open(os.path.join(exp, "OmniTradeExport.mq5"),
+                              "w", encoding="utf-8") as fh:
+                        fh.write(EA_SOURCE)
+                    changed = True
+                    if verbose:
+                        print("→ Expert Advisor installé dans MQL5/Experts.", flush=True)
+                except OSError:
+                    if verbose:
+                        print("→ Impossible d'écrire l'EA dans MQL5/Experts.", flush=True)
+        # 2) compiler -> .ex5
+        if ea_compile_auto():
+            changed = True
+        # 3) ouvrir MT5 (une fois) pour glisser l'EA
+        flag = _ea_flag_path()
+        if not os.path.isfile(flag):
+            if _open_mt5():
+                if verbose:
+                    print("→ Ouverture de MetaTrader 5 pour glisser l'EA…", flush=True)
+            try:
+                os.makedirs(os.path.dirname(flag), exist_ok=True)
+                open(flag, "w", encoding="utf-8").close()
+            except Exception:
+                pass
+    except Exception as e:
+        log.debug("ensure_ea_ready : %s", e)
+
+
 def emit_ea(path=None, auto_install=True):
     """Écrit OmniTradeExport.mq5.
 
@@ -9633,6 +9853,9 @@ def main():
             print(f"    Relancez avec un autre port :  --port {a.port + 1}\n")
             _bye(3)
 
+    # ── Préparation de l'EA (mode fichier) : install + compile + ouvre MT5 ──
+    ensure_ea_ready(verbose=True)
+
     if not mt5_connect(force=True):
         if NATIVE_API:
             print("\n[!] Impossible de se connecter au terminal MetaTrader 5.")
@@ -9643,13 +9866,16 @@ def main():
             print("\n[!] Aucun fichier account.json trouvé.")
             print("    Sur macOS, les données transitent par un Expert Advisor")
             print("    (le paquet Python MetaTrader5 est réservé à Windows).\n")
-            print("    1. Lancez ce programme avec l'option --emit-ea")
-            print("    2. Compilez OmniTradeExport.mq5 dans MetaEditor (F7)")
-            print("    3. Glissez l'EA sur un graphique + autorisez l'AutoTrading")
-            print("    4. Relancez ce pont")
-            print(f"\n    Dossier attendu : {file_data_dir()}")
-            print("    (ou précisez-le avec --data-dir \"/chemin/vers/MQL5/Files\")\n")
-            print("    Astuce : --list-dirs affiche tous les dossiers détectés.\n")
+            # L'EA a déjà été installé/compilé par ensure_ea_ready() plus haut.
+            if os.path.isfile(os.path.join(file_data_dir(), "account.json")):
+                print("    ✓ account.json détecté — la synchronisation va démarrer.\n")
+            else:
+                print("    1. Glissez OmniTradeExport du Navigateur MT5 sur un graphique")
+                print("    2. Cochez « Autoriser le trading algorithmique »")
+                print("    3. L'installation reprend automatiquement à la prochaine sync")
+                print(f"\n    Dossier attendu : {file_data_dir()}")
+                print("    (ou précisez-le avec --data-dir \"/chemin/vers/MQL5/Files\")\n")
+                print("    Astuce : --list-dirs affiche tous les dossiers détectés.\n")
         # On NE quitte PAS : les services de marché (actualités, calendrier,
         # sentiment) ne dépendent pas de MetaTrader. Un trader sans MT5 ouvert
         # doit quand même recevoir ses données de marché.
