@@ -19096,6 +19096,14 @@ function pfTrades(){
   }
   return list;
 }
+/* Équité LIVE du compte MT5 connecté (si dispo), sinon null. */
+function pfLiveEquity(){
+  try{
+    var a=(typeof mt5!=='undefined')?mt5.account:null;
+    if(a&&Number(a.equity)>0)return Number(a.equity);
+  }catch(e){}
+  return null;
+}
 function pfCompute(){
   const cfg=pfLoad();
   const trades=pfTrades();
@@ -19116,7 +19124,20 @@ function pfCompute(){
   const validated=pct>=cfg.target;
   const ddBroken=cfg.ddMax>0&&ddPct>=cfg.ddMax;
   const targetLeft=Math.max(0,cfg.target-pct);
-  return {cfg,trades,s,cap,pnl,pct,ddPct,ddAmt,targetAmt,ddMaxAmt,ddDayAmt,split,traderShare,traderAmt,firmAmt,validated,ddBroken,targetLeft};
+  // ── Drawdown en TEMPS RÉEL (équité live vs pic d'équité mémorisé) ──
+  let ddLivePct=0, ddLiveAmt=0, liveEquity=pfLiveEquity();
+  if(liveEquity!=null&&cap>0){
+    const peak=Math.max(Number(cfg.peakEquity)||0, liveEquity);
+    const v=Math.max(0, peak-liveEquity);
+    ddLiveAmt=v;
+    ddLivePct=peak? v/peak*100 : (cap? v/cap*100 : 0);
+    // Mémorise le nouveau pic d'équité (une fois par session).
+    if(liveEquity>peak){
+      cfg.peakEquity=liveEquity;
+      try{localStorage.setItem(PF_KEY,JSON.stringify(cfg));}catch(e){}
+    }
+  }
+  return {cfg,trades,s,cap,pnl,pct,ddPct,ddAmt,targetAmt,ddMaxAmt,ddDayAmt,split,traderShare,traderAmt,firmAmt,validated,ddBroken,targetLeft,ddLivePct,ddLiveAmt,liveEquity};
 }
 function pfRender(){
   const c=pfCompute();
@@ -20049,7 +20070,32 @@ var PROP_BANK = [
       {name:'Financé',target:0,ddMax:10,ddDay:3,split:90,minDays:0}
     ]}
   ]},
-  {id:'the5ers',kind:'prop',name:'The5%ers',keys:['the5ers','the 5ers','5ers','the5%ers'],program:'high-stakes',ddDay:5,ddMax:6,split:80,target:6,minDays:0,note:'Profil type High Stakes. Bootcamp / Hyper Growth : autres chiffres.'},
+  {id:'the5ers',kind:'prop',name:'The5%ers',keys:['the5ers','the 5ers','5ers','the5%ers'],program:'high-stakes',ddDay:5,ddMax:10,split:80,target:10,minDays:3,note:'Vérifié 07/2026 (voir programmes).',prog:[
+    {id:'hs-new',name:'High Stakes (2-Step, New)',target:10,ddMax:10,ddDay:5,split:80,minDays:3,note:'P1 10 % / P2 5 % · DD max 10 % statique · DD jour 5 % (compte terminé) · split 80 % → 100 % · scaling par palier de 10 % jusqu\u2019à 500K. 3 jours profitables (≥ 0,5 %).',phases:[
+      {name:'Phase 1',target:10,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Phase 2',target:5,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]},
+    {id:'hs-classic',name:'High Stakes (2-Step, Classic)',target:8,ddMax:10,ddDay:5,split:80,minDays:3,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · split 80 %.',phases:[
+      {name:'Phase 1',target:8,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Phase 2',target:5,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]},
+    {id:'hyper',name:'Hyper Growth (1-Step)',target:10,ddMax:6,ddDay:3,split:50,minDays:0,note:'Cible 10 % · stop-out 6 % · pause 3 %/jour (compte suspendu le jour) · leverage 1:30 · split 50 % → 100 % (doublé à chaque 10 %). Le plus risqué mais le plus gros potentiel (jusqu\u2019à 4M).',phases:[
+      {name:'Évaluation',target:10,ddMax:6,ddDay:3,split:50,minDays:0},
+      {name:'Financé',target:0,ddMax:6,ddDay:3,split:50,minDays:0}
+    ]},
+    {id:'progrow',name:'Pro Growth (1-Step)',target:10,ddMax:6,ddDay:3,split:75,minDays:3,note:'Cible 10 % · stop-out 6 % · DD jour 3 % (compte terminé) · split 75 % → 100 % · 3 jours profitables. Jusqu\u2019à 500K.',phases:[
+      {name:'Évaluation',target:10,ddMax:6,ddDay:3,split:75,minDays:3},
+      {name:'Financé',target:0,ddMax:6,ddDay:3,split:75,minDays:0}
+    ]},
+    {id:'bootcamp',name:'Bootcamp (3-Step)',target:6,ddMax:5,ddDay:0,split:50,minDays:0,note:'3 étapes à 6 % chacune contre DD max 5 % par étape ; pas de limite journalière en évaluation. Pause journalière 3 % UNE FOIS financé. Split 50 % → 100 % (scaling par palier de 5 %), jusqu\u2019à 4M. Le moins cher.',phases:[
+      {name:'Étape 1',target:6,ddMax:5,ddDay:0,split:50,minDays:0},
+      {name:'Étape 2',target:6,ddMax:5,ddDay:0,split:50,minDays:0},
+      {name:'Étape 3',target:6,ddMax:5,ddDay:0,split:50,minDays:0},
+      {name:'Financé',target:5,ddMax:4,ddDay:3,split:50,minDays:0}
+    ]}
+  ]},
   {id:'fundednext',kind:'prop',name:'FundedNext',keys:['fundednext','funded next'],program:'stellar',ddDay:5,ddMax:10,split:80,target:8,minDays:5,note:'Données officielles 2026 (voir programmes).',prog:[
     {id:'fn-2step',name:'Stellar 2-Step',target:8,ddMax:10,ddDay:5,split:80,minDays:5,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · min 5 j · split 80 % → 90 % (Scale-Up), 95 % avec add-on.',phases:[
       {name:'Phase 1',target:8,ddMax:10,ddDay:5,split:80,minDays:5},

@@ -7177,6 +7177,173 @@ def notify(text, title=None, tags=None):
     return ok, err
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+#  ROBOT DE VEILLE PROP FIRM (scan des règles / actualités)
+# ---------------------------------------------------------------------------
+#  Le pont connaît les prop firms du trader (compte MT5 = propDetect, ou la
+#  liste "mesPropFirms" fournie par l'app). Il scanne régulièrement des sources
+#  d'actualité prop trading (flux RSS + communautés), retient les articles qui
+#  mentionnent UNE de ces firmes, et les renvoie. Quand un article ressemble à
+#  un changement de règles, il notifie (mobile + Telegram).
+# ═════════════════════════════════════════════════════════════════════════════
+PROP_WATCH = {
+    "on": True,
+    "interval": 3600,          # 1 h entre deux scans
+    "last_scan": 0,
+    "last_seen": {},           # {slug: titre} pour ne pas re-notifier deux fois
+    "sources": [               # flux RSS / endpoints d'actualité (stables, testés 08/2026)
+        "https://www.fxstreet.com/rss/news",
+        "https://www.investing.com/rss/news_25.rss",
+        "https://forextrading247.com/feed/",
+        "https://www.fxleaders.com/feed/",
+        "https://www.mql5.com/en/rss/forum",
+    ],
+}
+
+
+def _pw_load():
+    try:
+        p = os.path.join(user_data_dir(), "propwatch.json")
+        if os.path.exists(p):
+            o = json.loads(open(p, encoding="utf-8").read())
+            if isinstance(o, dict):
+                for k in ("on", "interval", "last_scan"):
+                    if k in o:
+                        PROP_WATCH[k] = o[k]
+                if isinstance(o.get("last_seen"), dict):
+                    PROP_WATCH["last_seen"] = o["last_seen"]
+                if isinstance(o.get("sources"), list) and o["sources"]:
+                    PROP_WATCH["sources"] = o["sources"]
+    except Exception:
+        pass
+
+
+def _pw_save():
+    try:
+        with open(os.path.join(user_data_dir(), "propwatch.json"), "w", encoding="utf-8") as f:
+            json.dump({k: PROP_WATCH[k] for k in ("on", "interval", "last_scan", "last_seen", "sources")},
+                      f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _pw_firm_names():
+    """Firmes à surveiller : détection auto (compte MT5) + liste de l'app."""
+    names = set()
+    # 1) firme du compte MT5 connecté (propDetect)
+    try:
+        f = propDetect()
+        if f and f.kind == "prop":
+            names.add((f.name or "").strip().lower())
+            if f.program:
+                names.add((f.program).strip().lower())
+    except Exception:
+        pass
+    # 2) liste explicite fournie par l'app (mesPropFirms)
+    try:
+        p = os.path.join(user_data_dir(), "propwatch.json")
+        if os.path.exists(p):
+            o = json.loads(open(p, encoding="utf-8").read())
+            for c in o.get("my_firms") or []:
+                names.add(str(c).strip().lower())
+    except Exception:
+        pass
+    return {n for n in names if n and len(n) > 2}
+
+
+def _pw_parse_rss(xml):
+    """Extrait (titre, lien, date) d'un flux RSS/Atom. Robuste."""
+    out = []
+    try:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(xml)
+        for it in root.iter("item"):
+            t = (it.findtext("title") or "").strip()
+            l = (it.findtext("link") or "").strip()
+            d = (it.findtext("pubDate") or it.findtext("updated") or "").strip()
+            if t:
+                out.append({"t": t, "l": l, "d": d})
+        if not out:
+            for it in root.iter("entry"):
+                t = (it.findtext("title") or "").strip()
+                l = (it.findtext("id") or it.findtext("link") or "").strip()
+                d = (it.findtext("updated") or "").strip()
+                if t:
+                    out.append({"t": t, "l": l, "d": d})
+    except Exception:
+        pass
+    return out
+
+
+# Mots qui évoquent un CHANGEMENT de règles (pour typer l'alerte).
+_PW_RULE_WORDS = ("rule", "rulebook", "update", "change", "new", "split", "drawdown",
+                  "profit target", "announce", "launch", "discontinue", "pause",
+                  "consistency", "payout", "refund", "leverage", "raise", "cut")
+
+
+def prop_watch_scan(force=False):
+    """Scanne les sources et retourne les articles mentionnant les firmes du trader."""
+    _pw_load()
+    if not PROP_WATCH.get("on"):
+        return {"ok": True, "on": False, "articles": []}
+    now = time.time()
+    if not force and now - (PROP_WATCH.get("last_scan") or 0) < (PROP_WATCH.get("interval") or 3600):
+        return {"ok": True, "on": True, "articles": [], "throttled": True}
+    firms = _pw_firm_names()
+    if not firms:
+        return {"ok": True, "articles": [], "firms": []}
+    found = []
+    seen = set()
+    for src in (PROP_WATCH.get("sources") or []):
+        if not src:
+            continue
+        try:
+            xml = _mkt_get(src, timeout=20)
+        except Exception:
+            continue
+        for it in _pw_parse_rss(xml):
+            hay = (it["t"] + " " + it["l"]).lower()
+            hit = [f for f in firms if f in hay]
+            if not hit:
+                continue
+            key = (hit[0] + "|" + it["t"]).lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            rule_like = any(w in it["t"].lower() for w in _PW_RULE_WORDS)
+            found.append({
+                "text": it["t"], "link": it["l"], "date": it["d"],
+                "firm": hit[0], "rule_like": rule_like,
+            })
+    PROP_WATCH["last_scan"] = now
+    _pw_save()
+    # Notifie les nouveautés (une fois chacune) qui ressemblent à des règles.
+    for a in found:
+        sk = (a["firm"] + "|" + a["text"]).lower()
+        if PROP_WATCH.get("last_seen", {}).get(sk):
+            continue
+        PROP_WATCH.setdefault("last_seen", {})[sk] = 1
+        if a.get("rule_like"):
+            try:
+                okn, _err = notify(
+                    "📋 PROPFIRM — " + a["firm"].upper() + " :\n" + a["text"],
+                    "OmniTrade Hub · Veille prop firm", tags=["memo"])
+            except Exception:
+                pass
+    _pw_save()
+    return {"ok": True, "on": True, "articles": found, "firms": list(firms)}
+
+
+def _pw_detect_scheduled():
+    """Tâche périodique (fil d'arrière-plan) : scan + notification."""
+    while True:
+        time.sleep((PROP_WATCH.get("interval") or 3600))
+        try:
+            prop_watch_scan()
+        except Exception:
+            pass
+
+
 def _tg_abj_hm():
     try:
         from zoneinfo import ZoneInfo
@@ -9400,6 +9567,12 @@ def tg_start():
         pass
     t = threading.Thread(target=_tg_thread, daemon=True, name="tg-watch")
     t.start()
+    # Robot de veille prop firm : scan périodique des règles/actualités.
+    try:
+        pw = threading.Thread(target=_pw_detect_scheduled, daemon=True, name="prop-watch")
+        pw.start()
+    except Exception:
+        pass
 
 
 @app.get("/api/tg/status")
@@ -9593,6 +9766,47 @@ def api_ntfy_send():
         return jsonify({"ok": False, "error": "texte vide"}), 400
     ok, err = notify(text, data.get("title") or "OmniTrade Hub", data.get("tags"))
     return jsonify({"ok": ok, "error": err or ""})
+
+
+@app.get("/api/prop/watch")
+def api_prop_watch():
+    """Lance / interroge le scan de veille des règles prop firm."""
+    force = str(request.args.get("force") or "") in ("1", "true")
+    r = prop_watch_scan(force=force)
+    return jsonify(r)
+
+
+@app.post("/api/prop/watch-config")
+def api_prop_watch_config():
+    """Configure le robot de veille : on/off, intervalle, firmes à surveiller."""
+    data = request.get_json(silent=True) or {}
+    if "on" in data:
+        PROP_WATCH["on"] = bool(data.get("on"))
+    if "interval" in data:
+        try:
+            PROP_WATCH["interval"] = max(300, int(data.get("interval")))
+        except Exception:
+            pass
+    # Firmes explicites à surveiller ("mes prop firms").
+    if "my_firms" in data and isinstance(data.get("my_firms"), list):
+        try:
+            _pw_save()  # vide d'abord le fichier existant pour y écrire proprement
+            p = os.path.join(user_data_dir(), "propwatch.json")
+            o = {}
+            if os.path.exists(p):
+                try:
+                    o = json.loads(open(p, encoding="utf-8").read())
+                except Exception:
+                    o = {}
+            o["my_firms"] = [str(x).strip() for x in data.get("my_firms") if str(x).strip()]
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(o, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+    _pw_save()
+    return jsonify({"ok": True, "on": PROP_WATCH.get("on"),
+                    "interval": PROP_WATCH.get("interval"),
+                    "sources": PROP_WATCH.get("sources")})
 
 
 @app.get("/api/tg/log")
