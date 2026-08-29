@@ -18733,6 +18733,14 @@ function ntfyTest(){
     if (st) st.textContent = (j && j.ok) ? '✅ Test envoyé. Regardez ntfy sur votre téléphone.' : ((j && j.error) || 'échec');
   }).catch(function(){ if (st) st.textContent = 'Pont injoignable.'; });
 }
+/* Envoie une notification (mobile ntfy + Telegram selon la config du pont). */
+function notifySend(text, title, tags){
+  try{
+    tgApi('ntfy/send', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text: text, title: title || 'OmniTrade Hub', tags: tags || []})
+    }).catch(function(){});
+  }catch(e){}
+}
 
 
 // ── Orchestration ─────────────────────────────────────────────────────────
@@ -19093,8 +19101,9 @@ function pfRender(){
     +'<div class="rk-cell"><div class="rk-cl">Propfirm ('+(c.split||0)+'%)</div><div class="rk-cv" style="color:var(--cy);">'+fmt(c.firmAmt)+'</div></div>'
     +'<div class="rk-cell"><div class="rk-cl">'+(en?'Toi':'Toi')+' ('+(c.traderShare*100).toFixed(0)+'%)</div><div class="rk-cv" style="color:var(--g);">'+fmt(c.traderAmt)+'</div></div>'
     +'<div class="rk-cell"><div class="rk-cl">Capital</div><div class="rk-cv">'+fmt(c.cap)+'</div></div>'
-    +'<div class="rk-cell"><div class="rk-cl">Obj. profit</div><div class="rk-cv" style="color:var(--gold);">'+fmt(c.targetAmt)+'</div></div>'
-    +'</div>';
+     +'<div class="rk-cell"><div class="rk-cl">Obj. profit</div><div class="rk-cv" style="color:var(--gold);">'+fmt(c.targetAmt)+'</div></div>'
+     +'</div>';
+  try{pfCheckAlerts();}catch(e){}
 }
 function pfInit(){
   pfFillFirms();
@@ -19120,6 +19129,58 @@ function pfInit(){
 // initialisation différée
 if(typeof window!=='undefined'){
   window.addEventListener('load',()=>{try{pfInit();}catch(e){}});
+}
+
+/* ═══ ALERTES AUTOMATIQUES DU CHALLENGE PROP FIRM ═══════════════════════════
+   Notifie (mobile ntfy + Telegram via notifySend) quand le trader franchit un
+   seuil : % vers la cible (50/80/100 %) et % du drawdown consommé (50/80/90 %).
+   Une seule notification par seuil (état persisté). */
+function pfCheckAlerts(){
+  try{
+    const c=pfCompute();
+    if(!c.cfg||(!c.cfg.id&&!c.cfg.cap))return;     // pas de challenge configuré
+    const st=c.cfg.alerts||{};
+    const cap=Math.round(c.cfg.target||0);
+    const pctTo=c.cfg.target>0?Math.max(0,c.pct/c.cfg.target*100):0;
+    const ddUsed=c.cfg.ddMax>0?Math.max(0,c.ddPct/c.cfg.ddMax*100):0;
+    const en=(typeof LANG!=='undefined'&&LANG==='en');
+    const money=(n)=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
+    const firm=c.cfg.id&&pfFirmById(c.cfg.id)?pfFirmById(c.cfg.id).name:(en?'Challenge':'Challenge');
+    const changed={};
+    const tag=['bell'];
+    // Seuils de progression vers la cible
+    [50,80].forEach(function(t){
+      if(pctTo>=t&&!st['t'+t]){
+        changed['t'+t]=1;
+        notifySend('🎯 '+firm+' : '+t+'% de la cible atteinte ('+pctTo.toFixed(0)+'%) · '+c.pct.toFixed(2)+'% / '+cap+'%',
+          'OmniTrade Hub · Prop Firm', tag);
+      }
+    });
+    // Challenge validé (100 %)
+    if(c.validated&&!st.valid){
+      changed.valid=1;
+      notifySend('🏆 CHALLENGE VALIDÉ '+firm+' ! Cible '+cap+'% atteinte · P&L '+money(c.pnl),
+        'OmniTrade Hub · Prop Firm', ['trophy']);
+    }
+    // Drawdown consommé
+    [50,80,90].forEach(function(t){
+      if(ddUsed>=t&&!st['d'+t]){
+        changed['d'+t]=1;
+        notifySend('🛡️ '+firm+' : drawdown à '+t+'% de la limite ('+ddUsed.toFixed(0)+'%) · DD '+c.ddPct.toFixed(2)+'% / '+(c.cfg.ddMax||0)+'%',
+          'OmniTrade Hub · Prop Firm', tag);
+      }
+    });
+    if(Object.keys(changed).length){
+      const newSt=Object.assign({},st,changed);
+      const cfg=pfLoad();cfg.alerts=newSt;
+      try{localStorage.setItem(PF_KEY,JSON.stringify(cfg));}catch(e){}
+    }
+  }catch(e){}
+}
+// Surveille le challenge toutes les 90 s (ou à chaque rendu).
+if(typeof window!=='undefined'){
+  window.addEventListener('load',()=>{setTimeout(()=>{try{pfCheckAlerts();}catch(e){}},3000);
+    setInterval(()=>{try{pfCheckAlerts();}catch(e){}},90000);});
 }
 // Modules dont les métriques dépendent directement du jeu de trades : ils sont
 // systématiquement recalculés à l'arrivée de données MT5, même en arrière-plan,
