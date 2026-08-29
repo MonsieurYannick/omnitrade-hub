@@ -89,6 +89,7 @@ python -m PyInstaller --clean --noconfirm \
   --add-data "$APP:." \
   --add-data "9-licence.py:." \
   --add-data "public_key.txt:." \
+  --add-data "favicon-48.png:." \
   9-moteur-de-donnees.py 2>&1 | tail -5
 deactivate 2>/dev/null
 
@@ -117,6 +118,8 @@ cp -f "$APP" "$RES/OmniTradeBridge/_internal/$HTML_NAME" 2>/dev/null || true
 for f in "$APP" 9-moteur-de-donnees.py 9-licence.py public_key.txt 2-OmniTradeExport.mq5 cb_intel_backend.py cb_intel_prompt.md; do
   [[ -f "$f" ]] && cp -f "$f" "$RES/"
 done
+[[ -f "favicon-48.png" ]] && cp -f "favicon-48.png" "$RES/" 2>/dev/null
+[[ -f "logo-1024.png" ]] && cp -f "logo-1024.png" "$RES/" 2>/dev/null
 [[ -f "0-LISEZ-MOI.txt" ]] && cp -f "0-LISEZ-MOI.txt" "$RES/" 2>/dev/null
 [[ -f "OmniTradeHub.icns" ]] && cp -f "OmniTradeHub.icns" "$RES/" 2>/dev/null
 
