@@ -2348,6 +2348,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
     <div class="ni" data-page="objectifs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Objectifs</div>
     <div class="ni" data-page="accountability"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Accountability</div>
     <div class="ni" data-page="session"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Session Plan</div>
+    <div class="ni" data-page="propfirm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="15.5" r="1"/></svg>Prop Firm</div>
     <div class="ns">Personnel</div>
     <div class="ni" data-page="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Psycho &amp; IA<span class="upd ia" id="nb-notes" style="display:none;" title="Nouveau message de votre coach IA"><i></i><span id="nb-notes-txt">IA</span></span></div>
     <div class="ni" data-page="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import / Export</div>
@@ -2686,6 +2687,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
       <h2 style="font-size:17px;font-weight:900;">Rapport de Performance</h2>
       <div class="fs">
         <select class="f" id="rep-per" onchange="repPerTouched=true;rRep()"><option value="week">Cette semaine</option><option value="month" selected>Ce mois</option><option value="quarter">Ce trimestre</option><option value="all">Tout</option></select>
+        <button class="btn btn-b" onclick="repDownload()">⬇️ Télécharger le rapport</button>
         <button class="btn btn-b" onclick="window.print()">🖨️ Imprimer / PDF</button>
       </div>
     </div>
@@ -2779,6 +2781,82 @@ tr:hover td{background:rgba(52,211,153,.035);}
           <div id="sp-stats"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ PROP FIRM ═══ -->
+  <div id="pg-propfirm" class="page content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h2 style="font-size:17px;font-weight:900;">🛡️ Prop Firm — Suivi de challenge</h2>
+        <p style="font-size:11px;color:var(--text3);margin-top:2px;">Cible, drawdown, part du trader et retrait estimé — calculés automatiquement.</p>
+      </div>
+      <div class="fs">
+        <button class="btn btn-s" onclick="pfDetect()">🔍 Détecter automatiquement</button>
+        <button class="btn btn-p" onclick="pfSave();pfRender()">💾 Enregistrer</button>
+      </div>
+    </div>
+
+    <div class="rg">
+      <!-- ══ PARAMÈTRES ══ -->
+      <div class="rc">
+        <h3>Paramètres du challenge</h3>
+        <div class="fi" style="margin-bottom:10px;">
+          <label>Propfirm (déjà reconnue)</label>
+          <select id="pf-firm" onchange="pfFirmChange()"></select>
+          <div class="rk-note" id="pf-firm-note"></div>
+        </div>
+        <div class="fi" style="margin-bottom:10px;">
+          <label>Programme / Modèle</label>
+          <select id="pf-prog" onchange="pfProgChange()"></select>
+          <div class="rk-note" id="pf-prog-note"></div>
+        </div>
+        <div class="fi" style="margin-bottom:10px;">
+          <label>Capital de départ ($)</label>
+          <input type="number" id="pf-cap" value="10000" min="100" step="100" oninput="pfSave();pfRender()">
+        </div>
+        <div class="rg" style="gap:8px;">
+          <div class="fi">
+            <label>Objectif de profit (%)</label>
+            <input type="number" id="pf-target" value="10" min="0" step="0.5" oninput="pfSave();pfRender()">
+          </div>
+          <div class="fi">
+            <label>Drawdown max (%)</label>
+            <input type="number" id="pf-ddmax" value="10" min="0" step="0.5" oninput="pfSave();pfRender()">
+          </div>
+          <div class="fi">
+            <label>DD journalier (%)</label>
+            <input type="number" id="pf-ddday" value="5" min="0" step="0.5" oninput="pfSave();pfRender()">
+          </div>
+        </div>
+        <div class="rg" style="gap:8px;margin-top:8px;">
+          <div class="fi">
+            <label>Part de la firme (%)</label>
+            <input type="number" id="pf-split" value="80" min="0" max="100" step="1" oninput="pfSave();pfRender()">
+            <div class="rk-note">Ce que la propfirm garde sur chaque gain.</div>
+          </div>
+          <div class="fi">
+            <label>Jours minimum</label>
+            <input type="number" id="pf-mindays" value="0" min="0" step="1" oninput="pfSave();pfRender()">
+          </div>
+          <div class="fi">
+            <label>Date de début</label>
+            <input type="date" id="pf-start" oninput="pfSave();pfRender()">
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ RÉSUMÉ / RETRAIT ══ -->
+      <div class="rc">
+        <h3>Retrait estimé (part du trader)</h3>
+        <div id="pf-withdraw" style="margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ══ PROGRESSION / STATUT ══ -->
+    <div style="margin-top:14px;">
+      <div id="pf-progress" style="margin-bottom:12px;"></div>
+      <div id="pf-status"></div>
     </div>
   </div>
 
@@ -3068,13 +3146,16 @@ tr:hover td{background:rgba(52,211,153,.035);}
         </div>
         <div>
           <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px;">Type</label>
-          <select class="f" id="al-type" style="width:100%;">
+          <select class="f" id="al-type" style="width:100%;" onchange="alertTypeChange()">
             <option value="above">📈 Au-dessus de</option>
             <option value="below">📉 En-dessous de</option>
+            <option value="pct_up">📊 +X % de variation</option>
+            <option value="pct_down">📉 −X % de variation</option>
+            <option value="cross">🔀 Franchir (monte au-dessus puis casse)</option>
           </select>
         </div>
         <div>
-          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px;">Prix cible</label>
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px;">Prix cible / % <span id="al-type-unit">(prix)</span></label>
           <input class="si" id="al-price" type="number" step="any" placeholder="1.08500" style="width:100%;">
         </div>
         <div>
@@ -3189,11 +3270,12 @@ tr:hover td{background:rgba(52,211,153,.035);}
         <div class="fg">
           <div class="fi"><label>Protocole</label>
             <select id="mt5-proto" onchange="mt5SaveCfg()">
-              <option value="http">HTTP (Flask · recommandé)</option>
+              <option value="http">HTTP (pont local / réseau)</option>
+              <option value="https">HTTPS (VPS sécurisé)</option>
               <option value="ws">WebSocket (push temps réel)</option>
             </select>
           </div>
-          <div class="fi"><label>Hôte / URL locale</label><input type="text" id="mt5-host" value="127.0.0.1" placeholder="127.0.0.1" oninput="mt5SaveCfg()"></div>
+          <div class="fi"><label>Hôte du pont (local ou VPS)</label><input type="text" id="mt5-host" value="127.0.0.1" placeholder="127.0.0.1 ou IP/domaine VPS" oninput="mt5SaveCfg()"></div>
           <div class="fi"><label>Port</label><input type="number" id="mt5-port" value="8765" placeholder="8765" oninput="mt5SaveCfg()"></div>
           <div class="fi"><label>Clé de sécurité / Token</label>
             <div style="display:flex;align-items:center;gap:6px;flex:1;">
@@ -4961,7 +5043,7 @@ function ntRefresh(){
 // ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
-const TITLES={dashboard:'Dashboard',journal:'Journal de Trading',analytics:'Analytiques',calendrier:'Calendrier',playbook:'Playbook',risque:'Calculateur de Risque',rapport:'Rapport',objectifs:'Objectifs',accountability:'Accountability',session:'Session Plan',notes:'Psycho & IA',import:'Import / Export',mt5:'Connexion MetaTrader 5',cloud:'Sauvegarde Cloud',licence:'Licence & Abonnement',support:'Support & Contact',market:'Market Hub',edu:'Éducation & Macro',gold:'Gold Event Risk',cot:'COT & Biais journalier',cb:'Fed & Macro Policy Tracker',articles:'Articles FinancialJuice',video:'Flux Vidéo Trading',watchlist:'Watchlist',alertes:'Alertes de Prix'};
+const TITLES={dashboard:'Dashboard',journal:'Journal de Trading',analytics:'Analytiques',calendrier:'Calendrier',playbook:'Playbook',risque:'Calculateur de Risque',rapport:'Rapport',objectifs:'Objectifs',accountability:'Accountability',session:'Session Plan',propfirm:'Prop Firm',notes:'Psycho & IA',import:'Import / Export',mt5:'Connexion MetaTrader 5',cloud:'Sauvegarde Cloud',licence:'Licence & Abonnement',support:'Support & Contact',market:'Market Hub',edu:'Éducation & Macro',gold:'Gold Event Risk',cot:'COT & Biais journalier',cb:'Fed & Macro Policy Tracker',articles:'Articles FinancialJuice',video:'Flux Vidéo Trading',watchlist:'Watchlist',alertes:'Alertes de Prix'};
 /** Contenu d'origine des pages temporairement remplacées par l'écran de blocage. */
 const licStash={};
 
@@ -5895,6 +5977,40 @@ function rRep(){
         ${s.maxWS>3?`Votre meilleure série de <strong style="color:${C.g}">${s.maxWS} wins</strong> consécutifs montre une bonne consistance.`:''}`:'Aucun trade sur cette période.'}
       </div>
     </div>`;
+}
+
+/* Télécharge le rapport de performance en fichier HTML autoportant (prêt à
+   « Enregistrer en PDF » via l'aperçu d'impression). On réutilise le contenu
+   déjà rendu dans #rep-content pour garantir l'exactitude. */
+function repDownload(){
+  const now=new Date();
+  const body=document.getElementById('rep-content');
+  if(!body)return;
+  const perSel=document.getElementById('rep-per');
+  const perLbl=perSel?perSel.options[perSel.selectedIndex].text:'';
+  const dateFr=now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const html='<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">'
+    +'<title>Rapport de Performance — OmniTrade Hub</title>'
+    +'<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#0f172a;margin:24px;line-height:1.5}'
+    +'h2{font-size:18px;margin:0 0 4px}.sub{color:#64748b;font-size:12px;margin-bottom:18px}'
+    +'.rep-header{display:flex;justify-content:space-between;align-items:center;background:#f1f5f9;padding:14px 16px;border-radius:10px;margin-bottom:14px}'
+    +'.p{color:#22c55e}.n{color:#ef4444}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}'
+    +'th,td{border:1px solid #e2e8f0;padding:7px 9px;text-align:left}th{background:#f8fafc}'
+    +'.big{font-size:30px;font-weight:900}.st{font-size:12px;color:#64748b}'
+    +'</style></head><body>'
+    +'<h2>📊 Rapport de Performance</h2><div class="sub">OmniTrade Hub · '+perLbl+' · Généré le '+dateFr+'</div>'
+    +body.innerHTML
+    +'<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>'
+    +'</body></html>';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='rapport-omnitrade-'+now.toISOString().slice(0,10)+'.html';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  const btn=document.querySelector('#pg-rapport [onclick="repDownload()"]');
+  if(btn){const o=btn.textContent;btn.textContent='✅ Téléchargé';setTimeout(()=>{btn.textContent=o;},1600);}
 }
 
 // ═══════════════════════════════════════
@@ -8509,7 +8625,7 @@ function mt5SaveCfg(){
   mt5.cfg.days=Math.max(1,parseInt(g('mt5-days'))||365);
   mt5.cfg.interval=parseInt(g('mt5-interval'))||30;
   const pc=document.getElementById('mt5-proto-chip');
-  if(pc)pc.textContent=mt5.cfg.proto==='ws'?'WEBSOCKET':'HTTP';
+  if(pc)pc.textContent=(mt5.cfg.proto==='ws'?'WEBSOCKET':(mt5.cfg.proto==='https'?'HTTPS':'HTTP'));
   mt5Persist();
 }
 function mt5LoadCfg(){
@@ -8517,7 +8633,7 @@ function mt5LoadCfg(){
   s('mt5-proto',mt5.cfg.proto); s('mt5-host',mt5.cfg.host); s('mt5-port',mt5.cfg.port);
   s('mt5-token',mt5.cfg.token); s('mt5-days',mt5.cfg.days); s('mt5-interval',mt5.cfg.interval);
   const pc=document.getElementById('mt5-proto-chip');
-  if(pc)pc.textContent=mt5.cfg.proto==='ws'?'WEBSOCKET':'HTTP';
+  if(pc)pc.textContent=(mt5.cfg.proto==='ws'?'WEBSOCKET':(mt5.cfg.proto==='https'?'HTTPS':'HTTP'));
   [['sw-auto','auto'],['sw-mae','mae'],['sw-open','showOpen'],['sw-notify','notify']].forEach(([el,k])=>{
     const e=document.getElementById(el);if(e)e.classList.toggle('on',!!mt5.cfg[k]);
   });
@@ -8586,7 +8702,8 @@ function mt5SetStatus(st,msg){
 function mt5Url(path,params={}){
   const q=new URLSearchParams(params);
   if(mt5.cfg.token)q.set('token',mt5.cfg.token);
-  return `http://${mt5.cfg.host}:${mt5.cfg.port}${path}?${q.toString()}`;
+  const proto=(mt5.cfg.proto==='https'||mt5.cfg.proto==='wss')?'https':'http';
+  return `${proto}://${mt5.cfg.host}:${mt5.cfg.port}${path}?${q.toString()}`;
 }
 async function mt5Fetch(path,params={},timeout=45000){
   const ctl=new AbortController();
@@ -8609,12 +8726,14 @@ async function mt5Fetch(path,params={},timeout=45000){
 // « Plug & Play » : au démarrage, l'application cherche elle-même le pont sur
 // 127.0.0.1 (port configuré, puis 8765→8769 si celui-ci est occupé par une
 // autre application). Aucune saisie d'hôte, de port ni de jeton n'est requise.
-async function mt5Probe(port,token,timeout=1800){
+async function mt5Probe(port,token,timeout=1800,host){
+  host=host||'127.0.0.1';
+  const proto=(mt5.cfg.proto==='https'||mt5.cfg.proto==='wss')?'https':'http';
   const ctl=new AbortController();
   const to=setTimeout(()=>ctl.abort(),timeout);
   try{
     const q=new URLSearchParams(); if(token)q.set('token',token);
-    const r=await fetch(`http://127.0.0.1:${port}/api/ping?${q}`,
+    const r=await fetch(`${proto}://${host}:${port}/api/ping?${q}`,
       {signal:ctl.signal,headers:{'Accept':'application/json'},mode:'cors',cache:'no-store'});
     if(!r.ok)return null;
     const d=await r.json();
@@ -8624,6 +8743,24 @@ async function mt5Probe(port,token,timeout=1800){
 }
 
 async function mt5Discover({silent=true}={}){
+  // Mode VPS / distante : si l'utilisateur a configuré un hôte autre que le
+  // localhost, on NE fait PAS de découverte locale qui écraserait son réglage.
+  const host=(mt5.cfg.host||'').trim();
+  if(host && host!=='127.0.0.1' && host!=='localhost'){
+    for(const tk of [mt5.cfg.token||MT5_DEFAULT_TOKEN,MT5_DEFAULT_TOKEN,'']){
+      const d=await mt5Probe(mt5.cfg.port,tk,1800,host);
+      if(d){
+        mt5.cfg.token=tk;
+        mt5Persist();try{mt5LoadCfg();}catch(e){}
+        mt5SetStatus('on','Pont v'+(d.version||'?')+(d.mode?' · '+d.mode:''));
+        mt5Log('✅ Pont connecté (hôte distant '+host+':'+mt5.cfg.port
+          +(d.account?` · compte #${d.account.login}`:''),'ok');
+        return d;
+      }
+    }
+    if(!silent)mt5Log('Aucun pont joignable sur '+host+':'+mt5.cfg.port,'warn');
+    return null;
+  }
   const ports=[mt5.cfg.port,...MT5_PORT_SCAN.filter(p=>p!==mt5.cfg.port)];
   const tokens=[mt5.cfg.token||MT5_DEFAULT_TOKEN,MT5_DEFAULT_TOKEN,''];
   const seen=new Set();
@@ -11434,12 +11571,29 @@ function alertSave(){
   const type=document.getElementById('al-type')?.value||'above';
   const price=parseFloat(document.getElementById('al-price')?.value);
   const msg=(document.getElementById('al-msg')?.value||'').trim();
-  if(!sym||isNaN(price)){alert('Remplis le symbole et le prix cible.');return;}
+  if(!sym||isNaN(price)){alert('Remplis le symbole et le prix cible / le %.');return;}
   const arr=alertLoad();
-  arr.push({id:'al_'+Date.now(),sym,type,price,msg,active:true,created:new Date().toISOString()});
+  // Pour % variation et franchissement, on fixe un prix de référence au moment
+  // de la création (réel, via une requête) ; sinon on garde la cible saisie.
+  arr.push({id:'al_'+Date.now(),sym,type,price,msg,active:true,created:new Date().toISOString(),
+    ref:null,aboveSeen:false});
   alertPersist(arr);
   document.getElementById('alert-add-box').style.display='none';
   document.getElementById('al-sym').value='';document.getElementById('al-price').value='';document.getElementById('al-msg').value='';
+  // Récupère le prix réel pour établir la référence des alertes en %.
+  (function(){
+    const a=arr[arr.length-1];
+    const _tok=(typeof mt5!=='undefined'&&mt5&mt5.cfg&&mt5.cfg.token)?mt5.cfg.token:'ZELLA_TOKEN';
+    fetch('/api/yahoo/quote?symbols='+encodeURIComponent((typeof wlToYahoo==='function'?wlToYahoo(a.sym):a.sym))+'&token='+encodeURIComponent(_tok))
+      .then(r=>r.json()).then(d=>{
+        const q=d&&d.quoteResponse&&d.quoteResponse.result&&d.quoteResponse.result[0];
+        if(q&&q.regularMarketPrice){
+          const cur=alertLoad();
+          const t=cur.find(x=>x.id===a.id);
+          if(t){t.ref=q.regularMarketPrice;alertPersist(cur);}
+        }
+      }).catch(()=>{});
+  })();
   alertRender();
 }
 
@@ -11460,21 +11614,29 @@ function alertCheck(symbol,currentPrice){
     if(!a.active)return;
     const symMatch=a.sym.replace('=X','')===symbol.replace('=X','')||a.sym===symbol;
     if(!symMatch)return;
+    const ref=a.ref!=null?a.ref:a.price;   // prix de référence (création ou cible)
     let triggered=false;
-    if(a.type==='above'&&currentPrice>=a.price)triggered=true;
-    if(a.type==='below'&&currentPrice<=a.price)triggered=true;
+    let emoji='📈', texType='';
+    if(a.type==='above'&&currentPrice>=a.price){triggered=true;emoji='📈';texType='≥ '+a.price;}
+    else if(a.type==='below'&&currentPrice<=a.price){triggered=true;emoji='📉';texType='≤ '+a.price;}
+    else if(a.type==='pct_up'&&a.price>0&&ref>0){const v=(currentPrice/ref-1)*100;if(v>=a.price){triggered=true;emoji='📊';texType='+'+a.price+'% (variation '+v.toFixed(2)+'%)';}}
+    else if(a.type==='pct_down'&&a.price>0&&ref>0){const v=(currentPrice/ref-1)*100;if(v<=-a.price){triggered=true;emoji='📉';texType='−'+a.price+'% (variation '+v.toFixed(2)+'%)';}}
+    else if(a.type==='cross'&&ref>0){
+      // Franchir : d'abord monter au-dessus du niveau, puis casser en dessous.
+      if(currentPrice>=ref){a.aboveSeen=true;alertPersist(arr);}
+      else if(a.aboveSeen&&currentPrice<ref){triggered=true;emoji='🔀';texType='casse '+ref+' après être passé au-dessus';}
+    }
     if(triggered){
       // Log
       const log=alertLogLoad();
-      log.push({id:a.id,sym:a.sym,type:a.type,target:a.price,actual:currentPrice,msg:a.msg,time:new Date().toISOString()});
+      log.push({id:a.id,sym:a.sym,type:a.type,target:(a.type.indexOf('pct')===0?'%':a.price),actual:currentPrice,msg:a.msg,time:new Date().toISOString()});
       alertLogSave(log);
       // Notification
-      const emoji=a.type==='above'?'📈':'📉';
-      const text=`${emoji} ALERTE: ${a.sym} ${a.type==='above'?'≥':'≤'} ${a.price}\nPrix actuel: ${currentPrice}\n${a.msg||''}`;
-      if(Notification.permission==='granted'){new Notification('OmniTradeHub Alerte',{body:text});}
-      // Push Telegram
+      const text=`${emoji} ALERTE: ${a.sym} ${texType}\nPrix actuel: ${currentPrice}\n${a.msg||''}`;
+      if(Notification.permission==='granted'){try{new Notification('OmniTradeHub Alerte',{body:text});}catch(e){}}
+      // Push Telegram (kind:'raw' → texte libre tel quel)
       try{fetch('/api/tg/send',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({text:'🔔 *ALERT PRIX*\n'+text.replace(/\n/g,'\n')})});}catch(e){}
+        body:JSON.stringify({kind:'raw',text:'🔔 *ALERT PRIX*\n'+text.replace(/\n/g,'\n')})});}catch(e){}
       // Désactive l'alerte après déclenchement
       a.active=false;
       alertPersist(arr);
@@ -11490,15 +11652,17 @@ function alertRender(){
   if(!arr.length){el.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   el.innerHTML=arr.map(a=>{
-    const icon=a.type==='above'?'📈':'📉';
-    const typeLabel=a.type==='above'?'Au-dessus de':'En-dessous de';
+    const ai=alertTypeInfo(a.type);
+    const icon=ai.icon;
+    const typeLabel=ai.label;
+    const unit=(a.type==='pct_up'||a.type==='pct_down')?'%':'';
     const statusCol=a.active?'#34d399':'#6e788f';
     const created=a.created?new Date(a.created).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
     return `<div class="card" style="margin-bottom:8px;padding:12px;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:18px;">${icon}</span>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;">${a.sym} <span style="color:var(--text3);font-weight:400;font-size:11px;">${typeLabel}</span> <span style="font-family:var(--mono);color:var(--accent);">$${a.price}</span></div>
+          <div style="font-size:13px;font-weight:700;">${a.sym} <span style="color:var(--text3);font-weight:400;font-size:11px;">${typeLabel}</span> <span style="font-family:var(--mono);color:var(--accent);">${unit==='%'?a.price+'%':'$'+a.price}</span></div>
           <div style="font-size:10px;color:var(--text3);">${a.msg||'—'} · Créé le ${created}</div>
         </div>
         <span style="font-size:10px;font-weight:700;color:${statusCol};">${a.active?'● Actif':'○ Déclenché'}</span>
@@ -11507,6 +11671,33 @@ function alertRender(){
       </div>
     </div>`;
   }).join('');
+}
+
+function alertTypeInfo(type){
+  switch(type){
+    case 'above':return{icon:'📈',label:'Au-dessus de'};
+    case 'below':return{icon:'📉',label:'En-dessous de'};
+    case 'pct_up':return{icon:'📊',label:'+X % de hausse'};
+    case 'pct_down':return{icon:'📉',label:'−X % de baisse'};
+    case 'cross':return{icon:'🔀',label:'Franchissement'};
+    default:return{icon:'🔔',label:type};
+  }
+}
+function alertTypeChange(){
+  const t=document.getElementById('al-type')?.value||'above';
+  const unit=document.getElementById('al-type-unit');
+  const ph=document.getElementById('al-price');
+  if(!unit||!ph)return;
+  if(t==='pct_up'||t==='pct_down'){
+    unit.textContent='(%)';
+    ph.placeholder='ex. 2';
+    ph.step='any';
+  }else{
+    unit.textContent='(prix)';
+    ph.placeholder='1.08500';
+    ph.step='any';
+  }
+  if(t==='cross'){unit.textContent='(prix niveau)';ph.placeholder='1.08500';}
 }
 
 // Demande les notifications au chargement
@@ -13358,7 +13549,7 @@ function pfOther(){
 
 /* Appareils (soft ID) autorisés en version gratuite. */
 const LIC_FREE_MODULES = ['mt5', 'journal', 'market', 'alertes', 'watchlist',
-                          'licence', 'support'];
+                          'licence', 'support', 'propfirm'];
 
 /* Modules réservés aux abonnés : tout le reste (liste exhaustive). */
 const LIC_LOCKED = ['dashboard', 'analytics', 'calendrier', 'playbook',
@@ -13506,20 +13697,43 @@ function licActivateGet() {
   return { code: code.trim().toUpperCase(), email: email.trim().toLowerCase() };
 }
 
+/* Mémorise code + e-mail pour les restaurer après chaque licRender() (qui
+   détruit les champs). On ne vide JAMAIS le code : il reste utile si la clé
+   est encore en cache de validité. Stocké localement, jamais envoyé. */
+const LIC_MEM_KEY = 'zt3_lic_mem';
+function licMemSave(code, email) {
+  try { localStorage.setItem(LIC_MEM_KEY, JSON.stringify({ code: code || '', email: email || '' })); } catch (e) {}
+}
+function licMemLoad() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LIC_MEM_KEY) || '{}');
+    return { code: (v.code || ''), email: (v.email || '') };
+  } catch (e) { return { code: '', email: '' }; }
+}
+function licMemClear() { try { localStorage.removeItem(LIC_MEM_KEY); } catch (e) {} }
+
 async function licActivateCall(action, code, email, machine_id) {
-  const r = await fetch(SUPABASE_URL + '/functions/v1/oth-activate', {
-    method: 'POST',
-    headers: {
-      /* POST « simple » : content-type text/plain et AUCUN header non-simple
-         (pas de Authorization ni apikey) → le navigateur n'envoie pas de
-         preflight OPTIONS. Or Supabase Edge renvoie un 500 sur les préflight
-         OPTIONS, ce qui bloquait le vrai POST (erreur « connexion Internet »).
-         La fonction est publique (verify_jwt=false) : aucune clé requise. */
-      'Content-Type': 'text/plain;charset=UTF-8'
-    },
-    body: JSON.stringify({ code, email, machine_id, action })
-  });
-  return r.json().catch(() => null);
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/oth-activate', {
+      method: 'POST',
+      headers: {
+        /* POST « simple » : content-type text/plain et AUCUN header non-simple
+           (pas de Authorization ni apikey) → le navigateur n'envoie pas de
+           preflight OPTIONS. Or Supabase Edge renvoie un 500 sur les préflight
+           OPTIONS, ce qui bloquait le vrai POST (erreur « connexion Internet »).
+           La fonction est publique (verify_jwt=false) : aucune clé requise. */
+        'Content-Type': 'text/plain;charset=UTF-8'
+      },
+      body: JSON.stringify({ code, email, machine_id, action })
+    });
+    const j = await r.json().catch(() => null);
+    if (j) return j;                         // réponse serveur (ok ou erreur métier)
+    // Réponse non-JSON : serveur joignable mais réponse inattendue.
+    return { ok: false, http: r.status, netErr: 'bad_response' };
+  } catch (e) {
+    // Échec réseau réel (DNS, coupure, pare-feu, proxy).
+    return { ok: false, netErr: 'unreachable', err: String(e && e.message || e) };
+  }
 }
 
 async function licCodeActivate() {
@@ -13551,9 +13765,21 @@ async function licCodeActivate() {
   try {
     const j = await licActivateCall('activate', code, email, mid);
     if (!j || !j.ok || !j.key) {
-      const m = (j && j.msg_fr) || (en ? 'This purchase code was refused. Contact the seller.'
-          : 'Ce code d\u2019achat a été refusé. Contactez le vendeur.');
-      if (out) out.innerHTML = '<div class="al al-e">❌ ' + mkEsc(m) + '</div>';
+      // Message précis : réseau injoignable ≠ refus métier du serveur.
+      if (!j || j.netErr === 'unreachable') {
+        if (out) out.innerHTML = '<div class="al al-e">❌ ' + (en
+          ? 'Cannot reach the activation server. Check your internet connection (or a VPN/proxy) and retry.'
+          : 'Impossible de joindre le serveur d\u2019activation. V\u00e9rifiez votre connexion Internet '
+          + '(ou un VPN/proxy) puis r\u00e9essayez.') + '</div>';
+      } else if (j.netErr === 'bad_response' || (j.http && j.http >= 500)) {
+        if (out) out.innerHTML = '<div class="al al-e">⚠️ ' + (en
+          ? 'The activation server seems busy. Retry in a few seconds.'
+          : 'Le serveur d\u2019activation semble occup\u00e9. R\u00e9essayez dans quelques secondes.') + '</div>';
+      } else {
+        const m = (j && j.msg_fr) || (en ? 'This purchase code was refused. Contact the seller.'
+            : 'Ce code d\u2019achat a \u00e9t\u00e9 refus\u00e9. Contactez le vendeur.');
+        if (out) out.innerHTML = '<div class="al al-e">❌ ' + mkEsc(m) + '</div>';
+      }
       return;
     }
     // Clé émise pour ce poste : on la glisse dans le champ classique puis on
@@ -13563,21 +13789,17 @@ async function licCodeActivate() {
     if (out) out.innerHTML = '<div class="al al-s">✅ ' + (en
         ? 'Server accepted your purchase code. Applying your licence…'
         : 'Code d\u2019achat accepté par le serveur. Application de la licence\u2026') + '</div>';
-    // licActivate() régénère la page (licRender) : on sauvegarde le code et
-    // l'e-mail pour les réafficher — l'utilisateur ne doit jamais les retaper.
-    const savedCode = code;
-    const savedEmail = email;
+    // licActivate() régénère la page (licRender) et détruit les champs : on
+    // mémorise code + e-mail, licRender() les restaurera — l'utilisateur ne
+    // doit jamais les retaper.
+    licMemSave(code, email);
     await licActivate();
     const inp2 = document.getElementById('lic-code');
     const em2 = document.getElementById('lic-email');
     const out2 = document.getElementById('lic-code-msg');
-    if (inp2) {
-      inp2.value = savedCode;
-      // Le code reste utile en cas de cache de validité : on ne le vide JAMAIS.
-      inp2.focus();
-      inp2.select();
-    }
-    if (em2) em2.value = savedEmail;
+    // licRender() a déjà restauré code + e-mail depuis la mémoire ; on recentre
+    // simplement le focus pour enchaîner si besoin.
+    if (inp2) { try { inp2.focus(); } catch (e) {} }
     const okFinal = typeof LIC !== 'undefined' && LIC.valid;
     if (out2) out2.innerHTML = '<div class="al ' + (okFinal ? 'al-s' : 'al-w') + '">'
       + (okFinal ? '🔓 ' + (en ? 'Licence active — you can close this window now.'
@@ -13996,6 +14218,16 @@ function licRender() {
       + '<span id="lic-nvi-msg" style="font-size:12px;color:var(--text2);">'
       + (typeof nvidiaKey==='function'&&nvidiaKey()?'Cle NVIDIA deja presente.':'Aucune cle NVIDIA.')
       + '</span></div></div>';
+
+  // Restaure code + e-mail mémorisés (licRender détruit les champs) : on ne
+  // fait jamais retaper le code au client s'il a déjà été saisi.
+  const _mem = licMemLoad();
+  if (_mem.code || _mem.email) {
+    const _ce = document.getElementById('lic-code');
+    const _ee = document.getElementById('lic-email');
+    if (_ce && _mem.code) _ce.value = _mem.code;
+    if (_ee && _mem.email) _ee.value = _mem.email;
+  }
 }
 
 function licCopyMid() {
@@ -18585,8 +18817,211 @@ var RENDERERS={
   import:rStorSt, risque:()=>{rkFillInstruments();rkInstChange();}, mt5:rMT5, cloud:rCloud,
   market:rMarket, edu:rEdu, licence:licRender, support:supRender,
   gold:rGold, cot:rCot, cb:rCb,
-  watchlist:wlStartAutoRefresh, alertes:alertRender, video:vidLazyLoad
+  watchlist:wlStartAutoRefresh, alertes:alertRender, video:vidLazyLoad, propfirm:pfRender
 };
+
+/* ═══ PROP FIRM — SUIVI DE CHALLENGE (autonome) ═════════════════════════════ */
+const PF_KEY='zt3_pf';
+function pfLoad(){
+  try{const s=localStorage.getItem(PF_KEY);if(s){const p=JSON.parse(s);if(p&&typeof p==='object')return p;}}catch(e){}
+  return {id:'',prog:'',cap:10000,target:10,ddMax:10,ddDay:5,split:80,minDays:0,start:''};
+}
+function pfSave(){
+  const v=pfLoad();
+  v.id=document.getElementById('pf-firm')?.value||v.id;
+  v.prog=document.getElementById('pf-prog')?.value||v.prog||'';
+  v.cap=+ (document.getElementById('pf-cap')?.value||v.cap)||0;
+  v.target=+(document.getElementById('pf-target')?.value??v.target)||0;
+  v.ddMax=+(document.getElementById('pf-ddmax')?.value??v.ddMax)||0;
+  v.ddDay=+(document.getElementById('pf-ddday')?.value??v.ddDay)||0;
+  v.split=+(document.getElementById('pf-split')?.value??v.split)||0;
+  if(v.split>100)v.split=100;if(v.split<0)v.split=0;
+  v.minDays=parseInt(document.getElementById('pf-mindays')?.value)||0;
+  v.start=document.getElementById('pf-start')?.value||'';
+  try{localStorage.setItem(PF_KEY,JSON.stringify(v));}catch(e){}
+  return v;
+}
+function pfFirmById(id){
+  if(!PROP_BANK)return null;
+  return PROP_BANK.find(f=>f.id===id)||null;
+}
+function pfProgById(firm,pid){
+  if(!firm||!firm.prog||!Array.isArray(firm.prog))return null;
+  return firm.prog.find(p=>p.id===pid)||null;
+}
+function pfFillFirms(){
+  const sel=document.getElementById('pf-firm');
+  if(!sel)return;
+  if(!PROP_BANK||!PROP_BANK.length)return;
+  const cur=pfLoad().id;
+  sel.innerHTML='<option value="">— Personnalisé —</option>'
+    +PROP_BANK.filter(f=>f.kind==='prop').map(f=>
+      '<option value="'+f.id+'"'+(f.id===cur?' selected':'')+'>'+f.name+'</option>').join('');
+  pfFillProgs();
+}
+function pfFillProgs(){
+  const sel=document.getElementById('pf-prog');
+  if(!sel)return;
+  const id=document.getElementById('pf-firm')?.value||'';
+  const f=pfFirmById(id);
+  const cur=pfLoad().prog||'';
+  if(f&&f.prog&&Array.isArray(f.prog)&&f.prog.length){
+    sel.style.display='';
+    sel.innerHTML=f.prog.map(p=>
+      '<option value="'+p.id+'"'+(p.id===cur?' selected':'')+'>'+p.name+'</option>').join('');
+  }else{
+    sel.style.display='none';sel.innerHTML='';
+  }
+}
+function pfApplyFirm(id){
+  const f=pfFirmById(id);
+  if(!f)return;
+  const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
+  // Premier programme par défaut (sinon retour au profil générique de la firme).
+  const p=(f.prog&&Array.isArray(f.prog)&&f.prog.length)?f.prog[0]:(f.target==null?null:f);
+  if(p){
+    set('pf-target',p.target!=null?p.target:f.target);
+    set('pf-ddmax',p.ddMax!=null?p.ddMax:f.ddMax);
+    set('pf-ddday',p.ddDay!=null?p.ddDay:f.ddDay);
+    set('pf-split',p.split!=null?p.split:f.split);
+    set('pf-mindays',p.minDays!=null?p.minDays:f.minDays);
+  }
+  const n=document.getElementById('pf-firm-note');
+  if(n)n.textContent=(p&&p.note)||f.note||'';
+  pfFillProgs();
+  const ps=document.getElementById('pf-prog');
+  if(ps&&p&&p.id)ps.value=p.id;
+}
+function pfProgChange(){
+  const fid=document.getElementById('pf-firm')?.value||'';
+  const pid=document.getElementById('pf-prog')?.value||'';
+  const f=pfFirmById(fid);
+  const p=pfProgById(f,pid);
+  if(!p)return;
+  const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
+  set('pf-target',p.target);set('pf-ddmax',p.ddMax);set('pf-ddday',p.ddDay);
+  set('pf-split',p.split);set('pf-mindays',p.minDays);
+  const n=document.getElementById('pf-prog-note');
+  if(n)n.textContent=p.note||'';
+  pfSave();pfRender();
+}
+function pfFirmChange(){
+  const id=document.getElementById('pf-firm')?.value||'';
+  // personnalisé : ne rien appliquer, laisser les champs libres
+  if(!id){
+    document.getElementById('pf-firm-note').textContent='';
+    pfFillProgs();pfSave();pfRender();return;
+  }
+  pfApplyFirm(id);
+  const f=pfFirmById(id);
+  if(f&&f.prog&&f.prog.length){const p=f.prog[0];if(p&&p.note)document.getElementById('pf-prog-note').textContent=p.note;}
+  pfSave();pfRender();
+}
+function pfDetect(){
+  // Détection automatique depuis le compte MT5 connecté (propDetect existant).
+  try{const f=propDetect();if(f&&f.id&&f.id!=='local'){
+    const sel=document.getElementById('pf-firm');
+    if(sel){/* on garde le select si la firme est dans PROP_BANK */
+      if(PROP_BANK&&PROP_BANK.find(x=>x.id===f.id)){sel.value=f.id;pfApplyFirm(f.id);}
+    }
+    const c=document.getElementById('pf-cap');
+    if(c&&nowCap()>0)c.value=Math.round(nowCap());
+    if(sel)pfFirmChange();
+    else pfRender();
+  }}catch(e){pfRender();}
+}
+/* Profit cumulé depuis le début du challenge (filtre par compte comme l'app). */
+function pfTrades(){
+  let list=(typeof allT==='function'?allT():T)||[];
+  try{list=accFilter(list);}catch(e){}
+  const cfg=pfLoad();
+  if(cfg.start){
+    const t0=Date.parse(cfg.start);
+    if(!isNaN(t0))list=list.filter(t=>{const d=Date.parse(t.date||'');return !isNaN(d)&&d>=t0;});
+  }
+  return list;
+}
+function pfCompute(){
+  const cfg=pfLoad();
+  const trades=pfTrades();
+  const s=(typeof gS==='function')?gS(trades):null;
+  const cap=+cfg.cap||nowCap()||0;
+  const pnl=s?s.pnl:(trades.reduce((a,t)=>a+(parseFloat(t.pnl)||0),0));
+  const pct=cap?pnl/cap*100:0;
+  const ddPct=s?s.maxDD:0;                    // drawdown max (cumul) en % du capital
+  const ddAmt=cap?ddPct/100*cap:0;
+  const targetAmt=cap?cfg.target/100*cap:0;
+  const split=Math.min(100,Math.max(0,cfg.split||0));
+  const traderShare=(100-split)/100;           // part du trader
+  const gross=(s?pnl:trades.reduce((a,t)=>a+(parseFloat(t.pnl)||0),0));
+  const traderAmt=Math.max(0,gross)*traderShare;
+  const firmAmt=Math.max(0,gross)*(split/100);
+  const validated=pct>=cfg.target;
+  const ddBroken=cfg.ddMax>0&&ddPct>=cfg.ddMax;
+  const targetLeft=Math.max(0,cfg.target-pct);
+  return {cfg,trades,s,cap,pnl,pct,ddPct,ddAmt,targetAmt,split,traderShare,traderAmt,firmAmt,validated,ddBroken,targetLeft};
+}
+function pfRender(){
+  const c=pfCompute();
+  const en=(typeof LANG!=='undefined'&&LANG==='en');
+  const fmt=n=>(n==null||isNaN(n))?'—':(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
+  // barre de progression vers la cible
+  const pctTarget=c.target>0?Math.min(100,c.pct/c.target*100):0;
+  const col=pctTarget>=100?'var(--g)':pctTarget>=60?'var(--gold)':'var(--b)';
+  document.getElementById('pf-progress').innerHTML=
+    '<div class="card"><div class="ch"><span class="ct">Progression vers la cible ('
+    +(c.cfg.target||0)+'%)</span><span class="chip" style="color:'+col+';">'
+    +(c.targetLeft>0?(en?c.targetLeft.toFixed(2)+'% restant':c.targetLeft.toFixed(2)+'% restant'):'🎯 '+(en?'Target reached':'Cible atteinte'))+'</span></div>'
+    +'<div class="rk-hero'+(c.validated?'':'')+'" style="text-align:left;padding:14px;">'
+    +'<div style="height:14px;background:var(--bg4);border-radius:8px;overflow:hidden;"><i style="display:block;height:100%;width:'+pctTarget.toFixed(1)+'%;background:'+col+';transition:width .4s;"></i></div>'
+    +'<div class="rk-cs" style="margin-top:6px;">'+c.pct.toFixed(2)+'% / '+(c.cfg.target||0)+'% atteints · '+c.trades.length+' trades</div>'
+    +'</div></div>';
+  // statut / validation
+  let status;
+  if(c.validated){status='<div class="al al-s">🎉 <b>'+(en?'Challenge validated — target reached!':'Challenge validé — cible atteinte !')+'</b> '
+    +'Profit '+fmt(c.pnl)+' ('+c.pct.toFixed(2)+'%).</div>';}
+  else if(c.ddBroken){status='<div class="al al-e">💥 <b>'+(en?'Drawdown exceeded':'Drawdown max dépassé')+'</b> '
+    +'DD actuel '+c.ddPct.toFixed(2)+'% ≥ '+(c.cfg.ddMax||0)+'%.</div>';}
+  else{status='<div class="al al-i">📊 P&L '+fmt(c.pnl)+' ('+c.pct.toFixed(2)+'%) · DD max '+c.ddPct.toFixed(2)+'% / '+(c.cfg.ddMax||0)+'% · '
+    +(c.cfg.minDays?c.cfg.minDays+' j min':'')+'</div>';}
+  document.getElementById('pf-status').innerHTML=status;
+  // retrait estimé
+  const w=document.getElementById('pf-withdraw');
+  w.innerHTML='<div class="rk-hero'+(c.traderAmt>0?'':'')+'"><div class="rk-hero-l">'+(en?'Your share (net)':'Part du trader (nette)')+'</div>'
+    +'<div class="rk-hero-v" style="color:'+(c.traderAmt>0?'var(--g)':'var(--text3)')+';">'+fmt(c.traderAmt)+'</div>'
+    +'<div class="rk-hero-s">'+(en?'on gross profit':'sur profit brut')+' '+fmt(c.pnl)+' · '+(c.split||0)+'% firme → '+(c.traderShare*100).toFixed(0)+'% toi</div></div>'
+    +'<div class="rk-grid" style="margin-top:8px;">'
+    +'<div class="rk-cell"><div class="rk-cl">Propfirm ('+(c.split||0)+'%)</div><div class="rk-cv" style="color:var(--cy);">'+fmt(c.firmAmt)+'</div></div>'
+    +'<div class="rk-cell"><div class="rk-cl">'+(en?'Toi':'Toi')+' ('+(c.traderShare*100).toFixed(0)+'%)</div><div class="rk-cv" style="color:var(--g);">'+fmt(c.traderAmt)+'</div></div>'
+    +'<div class="rk-cell"><div class="rk-cl">Capital</div><div class="rk-cv">'+fmt(c.cap)+'</div></div>'
+    +'<div class="rk-cell"><div class="rk-cl">Obj. profit</div><div class="rk-cv" style="color:var(--gold);">'+fmt(c.targetAmt)+'</div></div>'
+    +'</div>';
+}
+function pfInit(){
+  pfFillFirms();
+  const cfg=pfLoad();
+  const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
+  set('pf-cap',cfg.cap||10000);set('pf-target',cfg.target);set('pf-ddmax',cfg.ddMax);
+  set('pf-ddday',cfg.ddDay);set('pf-split',cfg.split);set('pf-mindays',cfg.minDays||'');
+  set('pf-start',cfg.start||'');
+  if(document.getElementById('pf-firm'))document.getElementById('pf-firm').value=cfg.id||'';
+  pfApplyFirm(cfg.id||'');
+  // Restaure le programme choisi + ses règles exactes.
+  if(cfg.id&&cfg.prog){
+    const f=pfFirmById(cfg.id);const p=pfProgById(f,cfg.prog);
+    if(p){
+      const ps=document.getElementById('pf-prog');if(ps)ps.value=p.id;
+      set('pf-target',p.target);set('pf-ddmax',p.ddMax);set('pf-ddday',p.ddDay);
+      set('pf-split',p.split);set('pf-mindays',p.minDays);
+      const n=document.getElementById('pf-prog-note');if(n)n.textContent=p.note||'';
+    }
+  }
+  pfRender();
+}
+// initialisation différée
+if(typeof window!=='undefined'){
+  window.addEventListener('load',()=>{try{pfInit();}catch(e){}});
+}
 // Modules dont les métriques dépendent directement du jeu de trades : ils sont
 // systématiquement recalculés à l'arrivée de données MT5, même en arrière-plan,
 // afin qu'aucun onglet ne conserve d'anciennes valeurs.
@@ -19363,10 +19798,24 @@ function muteHtml() {
 }
 
 var PROP_BANK = [
-  {id:'fundingpips',kind:'prop',name:'FundingPips',keys:['fundingpips','funding pips','funding-pips'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Profil type 2-step. SIM = evaluation. 1-step / Pro / Zero : autres limites.'},
-  {id:'ftmo',kind:'prop',name:'FTMO',keys:['ftmo'],program:'challenge',ddDay:5,ddMax:10,split:80,target:10,minDays:4,note:'Profil type Challenge : cible 10 %, verif 5 %, 4 jours min, split ~80 %.'},
+  {id:'fundingpips',kind:'prop',name:'FundingPips',keys:['fundingpips','funding pips','funding-pips'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Données officielles 2026 (voir programmes).',prog:[
+    {id:'fp-1flex',name:'1-Step Flex',target:12,ddMax:12,ddDay:3,split:85,minDays:0,note:'Cible 12 % · DD max 12 % statique · DD jour 3 % · split 85 %.'},
+    {id:'fp-2std',name:'2-Step Standard',target:10,ddMax:10,ddDay:5,split:80,minDays:3,note:'P1 8 % (au 24/07/26) / P2 5 % · DD max 10 % · DD jour 5 % · split 80 % (bimensuel).'},
+    {id:'fp-2flex',name:'2-Step Flex',target:10,ddMax:12,ddDay:4,split:85,minDays:0,note:'P1 10 % / P2 6 % · DD max 12 % · DD jour 4 % · split 85 % (ou 95 % avec 3 jours profitables).'},
+    {id:'fp-2pro',name:'2-Step Pro',target:6,ddMax:6,ddDay:3,split:80,minDays:1,note:'P1 6 % / P2 6 % · DD max 6 % · DD jour 3 % · split 80 % (hebdo).'},
+    {id:'fp-zero',name:'Zero (Instant)',target:0,ddMax:5,ddDay:3,split:95,minDays:0,note:'Pas d\u2019évaluation · DD max 5 % TRAILING · DD jour 3 % · split 95 %.'}
+  ]},
+  {id:'ftmo',kind:'prop',name:'FTMO',keys:['ftmo'],program:'challenge',ddDay:5,ddMax:10,split:80,target:10,minDays:4,note:'Données officielles 2026 (voir programmes).',prog:[
+    {id:'ftmo-2step',name:'2-Step Challenge',target:10,ddMax:10,ddDay:5,split:80,minDays:4,note:'P1 10 % / P2 5 % · DD max 10 % STATIQUE · DD jour 5 % · min 4 j · split 80 % → 90 % (Scaling Plan).'},
+    {id:'ftmo-1step',name:'1-Step Challenge',target:10,ddMax:10,ddDay:3,split:90,minDays:0,note:'Cible 10 % · DD max 10 % TRAILING (end-of-day) · DD jour 3 % · Best-Day rule · split 90 % direct.'}
+  ]},
   {id:'the5ers',kind:'prop',name:'The5%ers',keys:['the5ers','the 5ers','5ers','the5%ers'],program:'high-stakes',ddDay:5,ddMax:6,split:80,target:6,minDays:0,note:'Profil type High Stakes. Bootcamp / Hyper Growth : autres chiffres.'},
-  {id:'fundednext',kind:'prop',name:'FundedNext',keys:['fundednext','funded next'],program:'stellar',ddDay:5,ddMax:10,split:80,target:8,minDays:5,note:'Profil type Stellar 2-step. Express / Stellar Lite : autres limites.'},
+  {id:'fundednext',kind:'prop',name:'FundedNext',keys:['fundednext','funded next'],program:'stellar',ddDay:5,ddMax:10,split:80,target:8,minDays:5,note:'Données officielles 2026 (voir programmes).',prog:[
+    {id:'fn-2step',name:'Stellar 2-Step',target:8,ddMax:10,ddDay:5,split:80,minDays:5,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · min 5 j · split 80 % → 90 % (Scale-Up), 95 % avec add-on.'},
+    {id:'fn-1step',name:'Stellar 1-Step',target:10,ddMax:6,ddDay:3,split:80,minDays:2,note:'Cible 10 % · DD max 6 % · DD jour 3 % · min 2 j · split 80 %.'},
+    {id:'fn-lite',name:'Stellar Lite',target:8,ddMax:8,ddDay:4,split:80,minDays:5,note:'P1 8 % / P2 4 % · DD max 8 % · DD jour 4 % · min 5 j · split 80 %.'},
+    {id:'fn-express',name:'Express (1-Step)',target:25,ddMax:10,ddDay:5,split:80,minDays:0,note:'Cible 25 % · DD max 10 % TRAILING · DD jour 5 % · split 80 %.'}
+  ]},
   {id:'apex',kind:'prop',name:'Apex Trader Funding',keys:['apex trader','apextrader','apex'],program:'futures',ddDay:5,ddMax:5,split:90,target:0,minDays:0,note:'Futures, trailing DD type. Split souvent ~90 %. Verifie le palier.'},
   {id:'e8',kind:'prop',name:'E8 Markets',keys:['e8 markets','e8funding','e8-'],program:'e8',ddDay:4,ddMax:8,split:80,target:8,minDays:1,note:'Profil type E8. Tranche et one-step different.'},
   {id:'alpha',kind:'prop',name:'Alpha Capital',keys:['alpha capital','alphacapital'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Profil type 2-step Alpha Capital.'},
@@ -19397,7 +19846,11 @@ var PROP_BANK = [
   {id:'funderpro',kind:'prop',name:'FunderPro',keys:['funderpro','funder pro'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Profil type FunderPro.'},
   {id:'pipfarm',kind:'prop',name:'PipFarm',keys:['pipfarm','pip farm'],program:'consistency',ddDay:3,ddMax:6,split:80,target:12,minDays:0,note:'Profil type PipFarm (consistency).'},
   {id:'tpt',kind:'prop',name:'Take Profit Trader',keys:['take profit trader','takeprofittrader'],program:'futures',ddDay:0,ddMax:5,split:80,target:0,minDays:0,note:'Futures, trailing type.'},
-  {id:'audacity',kind:'prop',name:'AudaCity Global',keys:['audacity','audacityglobal'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Profil type AudaCity.'},
+  {id:'audacity',kind:'prop',name:'Audacity Capital',keys:['audacity','audacityglobal'],program:'2-step',ddDay:5,ddMax:10,split:75,target:10,minDays:4,note:'Données officielles 2026 (voir programmes).',prog:[
+    {id:'aud-challenge',name:'Ability Challenge (2-Step)',target:10,ddMax:15,ddDay:7.5,split:75,minDays:4,note:'P1 10 % / P2 5 % · DD max 15 % (P1) / 10 % (P2) · DD jour 7.5 % (P1) / 5 % (P2) · split 75 % → 85 % → 90 % (scaling).'},
+    {id:'aud-one',name:'Ability One (1-Step)',target:10,ddMax:6,ddDay:3,split:75,minDays:3,note:'Cible 10 % · DD max 6 % · DD jour 3 % · split 75 % → 90 %.'},
+    {id:'aud-ftp',name:'FTP (Instant)',target:0,ddMax:10,ddDay:5,split:60,minDays:0,note:'Instant · DD max 10 % · DD jour 5 % · split 50-60 % (bien plus bas que le challenge).'}
+  ]},
   {id:'mff',kind:'prop',name:'MyForexFunds',keys:['myforexfunds','my forex funds'],program:'2-step',ddDay:5,ddMax:12,split:80,target:8,minDays:3,note:'Profil historique MFF. Verifie si le programme existe encore.'},
   {id:'axi',kind:'prop',name:'Axi Select',keys:['axi select','axiselect'],program:'select',ddDay:0,ddMax:0,split:0,target:0,minDays:0,note:'Programme Axi (hybrid). Pas un DD 5/10 classique.'},
   {id:'msolutions',kind:'prop',name:'MSolutions',keys:['msolutions','m solutions'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Profil type MSolutions.'},
