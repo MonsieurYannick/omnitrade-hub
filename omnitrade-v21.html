@@ -2812,6 +2812,11 @@ tr:hover td{background:rgba(52,211,153,.035);}
           <div class="rk-note" id="pf-prog-note"></div>
         </div>
         <div class="fi" style="margin-bottom:10px;">
+          <label>Phase du challenge</label>
+          <select id="pf-phase" onchange="pfPhaseChange()"></select>
+          <div class="rk-note" id="pf-phase-note"></div>
+        </div>
+        <div class="fi" style="margin-bottom:10px;">
           <label>Capital de départ ($)</label>
           <input type="number" id="pf-cap" value="10000" min="100" step="100" oninput="pfSave();pfRender()">
         </div>
@@ -18930,12 +18935,13 @@ var RENDERERS={
 const PF_KEY='zt3_pf';
 function pfLoad(){
   try{const s=localStorage.getItem(PF_KEY);if(s){const p=JSON.parse(s);if(p&&typeof p==='object')return p;}}catch(e){}
-  return {id:'',prog:'',cap:10000,target:10,ddMax:10,ddDay:5,split:80,minDays:0,start:''};
+  return {id:'',prog:'',phase:'',cap:10000,target:10,ddMax:10,ddDay:5,split:80,minDays:0,start:''};
 }
 function pfSave(){
   const v=pfLoad();
   v.id=document.getElementById('pf-firm')?.value||v.id;
   v.prog=document.getElementById('pf-prog')?.value||v.prog||'';
+  v.phase=document.getElementById('pf-phase')?.value||v.phase||'';
   v.cap=+ (document.getElementById('pf-cap')?.value||v.cap)||0;
   v.target=+(document.getElementById('pf-target')?.value??v.target)||0;
   v.ddMax=+(document.getElementById('pf-ddmax')?.value??v.ddMax)||0;
@@ -18978,6 +18984,47 @@ function pfFillProgs(){
   }else{
     sel.style.display='none';sel.innerHTML='';
   }
+  pfFillPhases();
+}
+function pfFillPhases(){
+  const sel=document.getElementById('pf-phase');
+  if(!sel)return;
+  const fid=document.getElementById('pf-firm')?.value||'';
+  const pid=document.getElementById('pf-prog')?.value||'';
+  const f=pfFirmById(fid);
+  const p=pfProgById(f,pid);
+  const cur=pfLoad().phase||'';
+  if(p&&p.phases&&Array.isArray(p.phases)&&p.phases.length){
+    sel.style.display='';
+    // Se souvient de la phase courante (index ou nom).
+    const curIdx=parseInt(cur,10);
+    sel.innerHTML=p.phases.map((ph,i)=>
+      '<option value="'+i+'"'+((curIdx===i||ph.name===cur)?' selected':'')+'>'+(ph.name||('Phase '+(i+1)))+'</option>').join('');
+  }else{
+    sel.style.display='none';sel.innerHTML='';
+  }
+}
+function pfPhaseByIdx(firm,prog,idx){
+  if(!prog||!prog.phases||!Array.isArray(prog.phases))return null;
+  idx=(idx==null||idx==='')?0:parseInt(idx,10);
+  return prog.phases[idx]||prog.phases[0];
+}
+function pfApplyPhase(firm,prog,idx){
+  const ph=pfPhaseByIdx(firm,prog,idx);
+  if(!ph)return;
+  const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
+  set('pf-target',ph.target);set('pf-ddmax',ph.ddMax);set('pf-ddday',ph.ddDay);
+  set('pf-split',ph.split);set('pf-mindays',ph.minDays);
+  const n=document.getElementById('pf-phase-note');
+  if(n)n.textContent=(ph.name?('En '+(ph.name)+' : '):'')+'cible '+(ph.target||0)+'% · DD max '+(ph.ddMax||0)+'% · DD jour '+(ph.ddDay||0)+'%'+(ph.minDays?(' · min '+ph.minDays+' j'):'')+(ph.split?' · split '+ph.split+'%':'');
+}
+function pfPhaseChange(){
+  const fid=document.getElementById('pf-firm')?.value||'';
+  const pid=document.getElementById('pf-prog')?.value||'';
+  const idx=document.getElementById('pf-phase')?.value||'';
+  const f=pfFirmById(fid), p=pfProgById(f,pid);
+  pfApplyPhase(f,p,idx);
+  pfSave();pfRender();
 }
 function pfApplyFirm(id){
   const f=pfFirmById(id);
@@ -18985,18 +19032,17 @@ function pfApplyFirm(id){
   const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
   // Premier programme par défaut (sinon retour au profil générique de la firme).
   const p=(f.prog&&Array.isArray(f.prog)&&f.prog.length)?f.prog[0]:(f.target==null?null:f);
-  if(p){
-    set('pf-target',p.target!=null?p.target:f.target);
-    set('pf-ddmax',p.ddMax!=null?p.ddMax:f.ddMax);
-    set('pf-ddday',p.ddDay!=null?p.ddDay:f.ddDay);
-    set('pf-split',p.split!=null?p.split:f.split);
-    set('pf-mindays',p.minDays!=null?p.minDays:f.minDays);
+  pfFillProgs();   // remplit le select programme + phase
+  if(p&&p.id){
+    const ps=document.getElementById('pf-prog');if(ps)ps.value=p.id;
+    // applique la phase 0 par défaut (ou la sauvegardée)
+    const curIdx=(pfLoad().phase===''?0:pfLoad().phase);
+    pfApplyPhase(f,p,curIdx);
+    const phs=document.getElementById('pf-phase');
+    if(phs&&p.phases&&p.phases.length){phs.value=curIdx;}
+    const nf=document.getElementById('pf-firm-note');
+    if(nf)nf.textContent=p.note||f.note||'';
   }
-  const n=document.getElementById('pf-firm-note');
-  if(n)n.textContent=(p&&p.note)||f.note||'';
-  pfFillProgs();
-  const ps=document.getElementById('pf-prog');
-  if(ps&&p&&p.id)ps.value=p.id;
 }
 function pfProgChange(){
   const fid=document.getElementById('pf-firm')?.value||'';
@@ -19004,11 +19050,14 @@ function pfProgChange(){
   const f=pfFirmById(fid);
   const p=pfProgById(f,pid);
   if(!p)return;
-  const set=(el,v)=>{const e=document.getElementById(el);if(e&&v!=null)e.value=v;};
-  set('pf-target',p.target);set('pf-ddmax',p.ddMax);set('pf-ddday',p.ddDay);
-  set('pf-split',p.split);set('pf-mindays',p.minDays);
   const n=document.getElementById('pf-prog-note');
   if(n)n.textContent=p.note||'';
+  pfFillPhases();
+  // applique la phase 0 par défaut
+  const curIdx=(pfLoad().phase===''?0:pfLoad().phase);
+  pfApplyPhase(f,p,curIdx);
+  const phs=document.getElementById('pf-phase');
+  if(phs&&p.phases&&p.phases.length){phs.value=curIdx;}
   pfSave();pfRender();
 }
 function pfFirmChange(){
@@ -19120,13 +19169,14 @@ function pfInit(){
   set('pf-start',cfg.start||'');
   if(document.getElementById('pf-firm'))document.getElementById('pf-firm').value=cfg.id||'';
   pfApplyFirm(cfg.id||'');
-  // Restaure le programme choisi + ses règles exactes.
+  // Restaure le programme choisi + sa phase exacte.
   if(cfg.id&&cfg.prog){
     const f=pfFirmById(cfg.id);const p=pfProgById(f,cfg.prog);
     if(p){
       const ps=document.getElementById('pf-prog');if(ps)ps.value=p.id;
-      set('pf-target',p.target);set('pf-ddmax',p.ddMax);set('pf-ddday',p.ddDay);
-      set('pf-split',p.split);set('pf-mindays',p.minDays);
+      const curIdx=(cfg.phase===''?0:cfg.phase);
+      pfApplyPhase(f,p,curIdx);
+      const phs=document.getElementById('pf-phase');if(phs&&p.phases&&p.phases.length){phs.value=curIdx;}
       const n=document.getElementById('pf-prog-note');if(n)n.textContent=p.note||'';
     }
   }
@@ -19965,22 +20015,60 @@ function muteHtml() {
 
 var PROP_BANK = [
   {id:'fundingpips',kind:'prop',name:'FundingPips',keys:['fundingpips','funding pips','funding-pips'],program:'2-step',ddDay:5,ddMax:10,split:80,target:8,minDays:3,note:'Données officielles 2026 (voir programmes).',prog:[
-    {id:'fp-1flex',name:'1-Step Flex',target:12,ddMax:12,ddDay:3,split:85,minDays:0,note:'Cible 12 % · DD max 12 % statique · DD jour 3 % · split 85 %.'},
-    {id:'fp-2std',name:'2-Step Standard',target:10,ddMax:10,ddDay:5,split:80,minDays:3,note:'P1 8 % (au 24/07/26) / P2 5 % · DD max 10 % · DD jour 5 % · split 80 % (bimensuel).'},
-    {id:'fp-2flex',name:'2-Step Flex',target:10,ddMax:12,ddDay:4,split:85,minDays:0,note:'P1 10 % / P2 6 % · DD max 12 % · DD jour 4 % · split 85 % (ou 95 % avec 3 jours profitables).'},
-    {id:'fp-2pro',name:'2-Step Pro',target:6,ddMax:6,ddDay:3,split:80,minDays:1,note:'P1 6 % / P2 6 % · DD max 6 % · DD jour 3 % · split 80 % (hebdo).'},
-    {id:'fp-zero',name:'Zero (Instant)',target:0,ddMax:5,ddDay:3,split:95,minDays:0,note:'Pas d\u2019évaluation · DD max 5 % TRAILING · DD jour 3 % · split 95 %.'}
+    {id:'fp-1flex',name:'1-Step Flex',target:12,ddMax:12,ddDay:3,split:85,minDays:0,note:'Cible 12 % · DD max 12 % statique · DD jour 3 % · split 85 %.',phases:[
+      {name:'Évaluation',target:12,ddMax:12,ddDay:3,split:85,minDays:0},
+      {name:'Financé',target:0,ddMax:12,ddDay:3,split:85,minDays:0}
+    ]},
+    {id:'fp-2std',name:'2-Step Standard',target:10,ddMax:10,ddDay:5,split:80,minDays:3,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · split 80 % (bimensuel).',phases:[
+      {name:'Phase 1',target:8,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Phase 2',target:5,ddMax:10,ddDay:5,split:80,minDays:3},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]},
+    {id:'fp-2flex',name:'2-Step Flex',target:10,ddMax:12,ddDay:4,split:85,minDays:0,note:'P1 10 % / P2 6 % · DD max 12 % · DD jour 4 % · split 85 % (ou 95 % avec 3 jours profitables).',phases:[
+      {name:'Phase 1',target:10,ddMax:12,ddDay:4,split:85,minDays:0},
+      {name:'Phase 2',target:6,ddMax:12,ddDay:4,split:85,minDays:0},
+      {name:'Financé',target:0,ddMax:12,ddDay:4,split:85,minDays:0}
+    ]},
+    {id:'fp-2pro',name:'2-Step Pro',target:6,ddMax:6,ddDay:3,split:80,minDays:1,note:'P1 6 % / P2 6 % · DD max 6 % · DD jour 3 % · split 80 % (hebdo).',phases:[
+      {name:'Phase 1',target:6,ddMax:6,ddDay:3,split:80,minDays:1},
+      {name:'Phase 2',target:6,ddMax:6,ddDay:3,split:80,minDays:1},
+      {name:'Financé',target:0,ddMax:6,ddDay:3,split:80,minDays:0}
+    ]},
+    {id:'fp-zero',name:'Zero (Instant)',target:0,ddMax:5,ddDay:3,split:95,minDays:0,note:'Pas d\u2019évaluation · DD max 5 % TRAILING · DD jour 3 % · split 95 %.',phases:[
+      {name:'Financé',target:0,ddMax:5,ddDay:3,split:95,minDays:0}
+    ]}
   ]},
   {id:'ftmo',kind:'prop',name:'FTMO',keys:['ftmo'],program:'challenge',ddDay:5,ddMax:10,split:80,target:10,minDays:4,note:'Données officielles 2026 (voir programmes).',prog:[
-    {id:'ftmo-2step',name:'2-Step Challenge',target:10,ddMax:10,ddDay:5,split:80,minDays:4,note:'P1 10 % / P2 5 % · DD max 10 % STATIQUE · DD jour 5 % · min 4 j · split 80 % → 90 % (Scaling Plan).'},
-    {id:'ftmo-1step',name:'1-Step Challenge',target:10,ddMax:10,ddDay:3,split:90,minDays:0,note:'Cible 10 % · DD max 10 % TRAILING (end-of-day) · DD jour 3 % · Best-Day rule · split 90 % direct.'}
+    {id:'ftmo-2step',name:'2-Step Challenge',target:10,ddMax:10,ddDay:5,split:80,minDays:4,note:'P1 10 % / P2 5 % · DD max 10 % STATIQUE · DD jour 5 % · min 4 j · split 80 % → 90 % (Scaling Plan).',phases:[
+      {name:'Phase 1 (Challenge)',target:10,ddMax:10,ddDay:5,split:80,minDays:4},
+      {name:'Phase 2 (Vérification)',target:5,ddMax:10,ddDay:5,split:80,minDays:4},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]},
+    {id:'ftmo-1step',name:'1-Step Challenge',target:10,ddMax:10,ddDay:3,split:90,minDays:0,note:'Cible 10 % · DD max 10 % TRAILING (end-of-day) · DD jour 3 % · Best-Day rule · split 90 % direct.',phases:[
+      {name:'Évaluation',target:10,ddMax:10,ddDay:3,split:90,minDays:0},
+      {name:'Financé',target:0,ddMax:10,ddDay:3,split:90,minDays:0}
+    ]}
   ]},
   {id:'the5ers',kind:'prop',name:'The5%ers',keys:['the5ers','the 5ers','5ers','the5%ers'],program:'high-stakes',ddDay:5,ddMax:6,split:80,target:6,minDays:0,note:'Profil type High Stakes. Bootcamp / Hyper Growth : autres chiffres.'},
   {id:'fundednext',kind:'prop',name:'FundedNext',keys:['fundednext','funded next'],program:'stellar',ddDay:5,ddMax:10,split:80,target:8,minDays:5,note:'Données officielles 2026 (voir programmes).',prog:[
-    {id:'fn-2step',name:'Stellar 2-Step',target:8,ddMax:10,ddDay:5,split:80,minDays:5,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · min 5 j · split 80 % → 90 % (Scale-Up), 95 % avec add-on.'},
-    {id:'fn-1step',name:'Stellar 1-Step',target:10,ddMax:6,ddDay:3,split:80,minDays:2,note:'Cible 10 % · DD max 6 % · DD jour 3 % · min 2 j · split 80 %.'},
-    {id:'fn-lite',name:'Stellar Lite',target:8,ddMax:8,ddDay:4,split:80,minDays:5,note:'P1 8 % / P2 4 % · DD max 8 % · DD jour 4 % · min 5 j · split 80 %.'},
-    {id:'fn-express',name:'Express (1-Step)',target:25,ddMax:10,ddDay:5,split:80,minDays:0,note:'Cible 25 % · DD max 10 % TRAILING · DD jour 5 % · split 80 %.'}
+    {id:'fn-2step',name:'Stellar 2-Step',target:8,ddMax:10,ddDay:5,split:80,minDays:5,note:'P1 8 % / P2 5 % · DD max 10 % · DD jour 5 % · min 5 j · split 80 % → 90 % (Scale-Up), 95 % avec add-on.',phases:[
+      {name:'Phase 1',target:8,ddMax:10,ddDay:5,split:80,minDays:5},
+      {name:'Phase 2',target:5,ddMax:10,ddDay:5,split:80,minDays:5},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]},
+    {id:'fn-1step',name:'Stellar 1-Step',target:10,ddMax:6,ddDay:3,split:80,minDays:2,note:'Cible 10 % · DD max 6 % · DD jour 3 % · min 2 j · split 80 %.',phases:[
+      {name:'Évaluation',target:10,ddMax:6,ddDay:3,split:80,minDays:2},
+      {name:'Financé',target:0,ddMax:6,ddDay:3,split:80,minDays:0}
+    ]},
+    {id:'fn-lite',name:'Stellar Lite',target:8,ddMax:8,ddDay:4,split:80,minDays:5,note:'P1 8 % / P2 4 % · DD max 8 % · DD jour 4 % · min 5 j · split 80 %.',phases:[
+      {name:'Phase 1',target:8,ddMax:8,ddDay:4,split:80,minDays:5},
+      {name:'Phase 2',target:4,ddMax:8,ddDay:4,split:80,minDays:5},
+      {name:'Financé',target:0,ddMax:8,ddDay:4,split:80,minDays:0}
+    ]},
+    {id:'fn-express',name:'Express (1-Step)',target:25,ddMax:10,ddDay:5,split:80,minDays:0,note:'Cible 25 % · DD max 10 % TRAILING · DD jour 5 % · split 80 %.',phases:[
+      {name:'Évaluation',target:25,ddMax:10,ddDay:5,split:80,minDays:0},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:80,minDays:0}
+    ]}
   ]},
   {id:'apex',kind:'prop',name:'Apex Trader Funding',keys:['apex trader','apextrader','apex'],program:'futures',ddDay:5,ddMax:5,split:90,target:0,minDays:0,note:'Futures, trailing DD type. Split souvent ~90 %. Verifie le palier.'},
   {id:'e8',kind:'prop',name:'E8 Markets',keys:['e8 markets','e8funding','e8-'],program:'e8',ddDay:4,ddMax:8,split:80,target:8,minDays:1,note:'Profil type E8. Tranche et one-step different.'},
@@ -20013,9 +20101,18 @@ var PROP_BANK = [
   {id:'pipfarm',kind:'prop',name:'PipFarm',keys:['pipfarm','pip farm'],program:'consistency',ddDay:3,ddMax:6,split:80,target:12,minDays:0,note:'Profil type PipFarm (consistency).'},
   {id:'tpt',kind:'prop',name:'Take Profit Trader',keys:['take profit trader','takeprofittrader'],program:'futures',ddDay:0,ddMax:5,split:80,target:0,minDays:0,note:'Futures, trailing type.'},
   {id:'audacity',kind:'prop',name:'Audacity Capital',keys:['audacity','audacityglobal'],program:'2-step',ddDay:5,ddMax:10,split:75,target:10,minDays:4,note:'Données officielles 2026 (voir programmes).',prog:[
-    {id:'aud-challenge',name:'Ability Challenge (2-Step)',target:10,ddMax:15,ddDay:7.5,split:75,minDays:4,note:'P1 10 % / P2 5 % · DD max 15 % (P1) / 10 % (P2) · DD jour 7.5 % (P1) / 5 % (P2) · split 75 % → 85 % → 90 % (scaling).'},
-    {id:'aud-one',name:'Ability One (1-Step)',target:10,ddMax:6,ddDay:3,split:75,minDays:3,note:'Cible 10 % · DD max 6 % · DD jour 3 % · split 75 % → 90 %.'},
-    {id:'aud-ftp',name:'FTP (Instant)',target:0,ddMax:10,ddDay:5,split:60,minDays:0,note:'Instant · DD max 10 % · DD jour 5 % · split 50-60 % (bien plus bas que le challenge).'}
+    {id:'aud-challenge',name:'Ability Challenge (2-Step)',target:10,ddMax:15,ddDay:7.5,split:75,minDays:4,note:'P1 10 % / P2 5 % · DD max 15 % (P1) / 10 % (P2) · DD jour 7.5 % (P1) / 5 % (P2) · split 75 % → 85 % → 90 % (scaling).',phases:[
+      {name:'Phase 1 (Challenge)',target:10,ddMax:15,ddDay:7.5,split:75,minDays:4},
+      {name:'Phase 2 (Vérification)',target:5,ddMax:10,ddDay:5,split:75,minDays:4},
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:75,minDays:0}
+    ]},
+    {id:'aud-one',name:'Ability One (1-Step)',target:10,ddMax:6,ddDay:3,split:75,minDays:3,note:'Cible 10 % · DD max 6 % · DD jour 3 % · split 75 % → 90 %.',phases:[
+      {name:'Évaluation',target:10,ddMax:6,ddDay:3,split:75,minDays:3},
+      {name:'Financé',target:0,ddMax:6,ddDay:3,split:75,minDays:0}
+    ]},
+    {id:'aud-ftp',name:'FTP (Instant)',target:0,ddMax:10,ddDay:5,split:60,minDays:0,note:'Instant · DD max 10 % · DD jour 5 % · split 50-60 % (bien plus bas que le challenge).',phases:[
+      {name:'Financé',target:0,ddMax:10,ddDay:5,split:60,minDays:0}
+    ]}
   ]},
   {id:'mff',kind:'prop',name:'MyForexFunds',keys:['myforexfunds','my forex funds'],program:'2-step',ddDay:5,ddMax:12,split:80,target:8,minDays:3,note:'Profil historique MFF. Verifie si le programme existe encore.'},
   {id:'axi',kind:'prop',name:'Axi Select',keys:['axi select','axiselect'],program:'select',ddDay:0,ddMax:0,split:0,target:0,minDays:0,note:'Programme Axi (hybrid). Pas un DD 5/10 classique.'},
