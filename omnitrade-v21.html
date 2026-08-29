@@ -19318,7 +19318,8 @@ function pwScan(){
     if(!j||!j.ok){res.innerHTML='<div class="al al-e">Pont injoignable.</div>';return;}
     const arts=j.articles||[];
     if(!arts.length){
-      res.innerHTML='<div class="al al-i">Aucune règle récente trouvée pour vos firmes'+(j.firms&&j.firms.length?(' ('+j.firms.join(', ')+')'):'')+'. Réessayez plus tard.</div>';return;
+      res.innerHTML='<div class="al al-i">Aucune règle récente trouvée pour vos firmes'+(j.firms&&j.firms.length?(' ('+j.firms.join(', ')+')'):'')+'. '
+        +'<span style="opacity:.8;">La recherche gratuite est parfois temporairement limitée — réessayez dans quelques minutes.</span></div>';return;
     }
     res.innerHTML='<div class="al al-s">✅ '+arts.length+' résultat(s) sur '+(j.firms||[]).join(', ')+'</div>'
       +arts.slice(0,8).map(function(a){
