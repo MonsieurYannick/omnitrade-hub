@@ -5468,7 +5468,7 @@ function wStats(el){
 
 // ═══ Widget: Charts ═══
 function wChartEquity(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-eqC"></canvas><div id="wg-eq-meta" style="font-size:10px;color:var(--text3);margin-top:6px;"></div></div>';
+  el.innerHTML='<div class="wg-chart" style="height:180px;"><canvas id="wg-eqC"></canvas><div id="wg-eq-meta" style="font-size:10px;color:var(--text3);margin-top:6px;"></div></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);
   const sorted=[...data].sort((a,b)=>new Date(a.date)-new Date(b.date));
   let cum=0,peak=0,maxDD=0;const lbs=[],vals=[],dds=[];
@@ -5482,24 +5482,24 @@ function wChartEquity(el,wid){
   if(meta)meta.textContent='Équité cumulée · DD max -$'+Math.abs(maxDD).toFixed(2);
 }
 function wChartDist(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-doC"></canvas></div>';
+  el.innerHTML='<div class="wg-chart" style="height:180px;"><canvas id="wg-doC"></canvas></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);const s=gS(data);
   mkD('wg-doC',['Win','Loss','BE'],[s.wins,s.losses,s.be],[C.g+'33',C.r+'33','rgba(255,255,255,0.08)']);
 }
 function wChartMarket(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-mkC"></canvas></div>';
+  el.innerHTML='<div class="wg-chart" style="height:180px;"><canvas id="wg-mkC"></canvas></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);
   const byM={};data.forEach(t=>{byM[t.market]=(byM[t.market]||0)+(parseFloat(t.pnl)||0);});
   mkB('wg-mkC',Object.keys(byM),Object.values(byM));
 }
 function wChartWeekday(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-dwC"></canvas></div>';
+  el.innerHTML='<div class="wg-chart" style="height:180px;"><canvas id="wg-dwC"></canvas></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);
   const byDow={};data.forEach(t=>{if(!t.date)return;const d=new Date(t.date).toLocaleDateString('fr-FR',{weekday:'short'});byDow[d]=(byDow[d]||0)+(parseFloat(t.pnl)||0);});
   const days=['lun.','mar.','mer.','jeu.','ven.'];mkB('wg-dwC',days,days.map(d=>byDow[d]||0));
 }
 function wChartSession(el,wid){
-  el.innerHTML='<div class="wg-chart"><canvas id="wg-ssC"></canvas></div>';
+  el.innerHTML='<div class="wg-chart" style="height:180px;"><canvas id="wg-ssC"></canvas></div>';
   const T=accFilter(allT());const data=fPd(T,dashPd);
   const bySs={};data.forEach(t=>{if(!t.session)return;bySs[t.session]=(bySs[t.session]||0)+(parseFloat(t.pnl)||0);});
   mkB('wg-ssC',Object.keys(bySs),Object.values(bySs));
