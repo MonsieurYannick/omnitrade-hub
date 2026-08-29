@@ -90,6 +90,7 @@ python -m PyInstaller --clean --noconfirm \
   --add-data "9-licence.py:." \
   --add-data "public_key.txt:." \
   --add-data "favicon-48.png:." \
+  --add-data "logo-1024.png:." \
   9-moteur-de-donnees.py 2>&1 | tail -5
 deactivate 2>/dev/null
 

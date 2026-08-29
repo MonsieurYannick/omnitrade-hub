@@ -72,8 +72,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* LOGO */
 .logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
 .logo-inner{display:flex;align-items:center;gap:10px;}
-.logo-gem{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#34d399,#38bdf8);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(52,211,153,0.3);}
-.logo-gem svg{width:18px;height:18px;stroke:#000;stroke-width:2.5;fill:none;}
+.logo-gem{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.logo-gem img{width:100%;height:100%;object-fit:contain;}
 .logo-name{font-size:18px;font-weight:900;letter-spacing:-0.5px;}
 .logo-name em{color:var(--g);font-style:normal;}
 .logo-ver{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:2px;margin-top:2px;}
@@ -2426,7 +2426,7 @@ tr:hover td{background:rgba(52,211,153,.035);}
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-inner">
-      <div class="logo-gem"><img src="favicon-48.png" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:10px;"></div>
+      <div class="logo-gem"><img src="logo-1024.png" alt="Omnitrade" style="width:100%;height:100%;object-fit:contain;"></div>
       <div>
         <div class="logo-name">Omni<em>Trade</em> Hub</div>
         <div class="logo-ver" id="app-ver" title="Version de l'application"></div>
@@ -11798,7 +11798,7 @@ function alertStartChecker(){
           if(qt.regularMarketPrice)alertCheck(qt.symbol,qt.regularMarketPrice);
         });
       }).catch(()=>{});
-  },30000);
+  },60000);
 }
 
 function alertShowAdd(){
@@ -12021,17 +12021,21 @@ async function doLogin(){
   if(_loginMode==='signup'){
     return doSignup(email,pwd);
   }
-  // Connexion : d'abord Supabase (compte = sauvegarde cloud) ; sinon repli local.
+  // Compte unique strict : la connexion passe par Supabase (email + mot de passe).
+  // Sans email -> cadenas local uniquement (licence masquée, car pas de compte).
   if(email){
     const s=await cloudLogin(email,pwd);
     if(s){ unlockApp(); return; }
-    // Sans compte Supabase, on retombe sur le mot de passe local (hors-ligne).
+    return;   // cloudLogin a affiché l'erreur : on n'ouvre PAS l'app.
   }
+  // Repli local : uniquement un vrai mot de passe défini (jamais le défaut 'omnitrade'
+  // pour valider un accès à une licence). C'est le cadenas de l'appareil.
   const h=await sha256(pwd);
   const stored=localStorage.getItem(LOGIN_HASH_KEY);
-  if(h===stored){ unlockApp(); }
-  else{
-    if(err)err.textContent='Identifiants incorrects. Vérifiez votre e-mail / mot de passe, ou inscrivez-vous.';
+  if(h===stored && h !== await sha256(LOGIN_DEFAULT)){
+    unlockApp();
+  }else{
+    if(err)err.textContent='Saisissez un e-mail et votre mot de passe de compte pour vous connecter.';
     const pw=document.getElementById('login-pwd'); if(pw){pw.value='';pw.focus();}
   }
 }
@@ -13945,6 +13949,13 @@ async function licRefresh() {
     // l'application ouverte grâce à un ancien cache.
     try { localStorage.removeItem('zt3_lic_cache'); } catch (e) { }
   }
+  // Compte unique strict : la licence (même valide côté moteur) n'est active
+  // que si l'email du compte connecté == email de la licence. Sinon -> bloquée.
+  if (LIC.valid && !licEmailOk()) {
+    LIC.valid = false;
+    LIC.reason = 'compte';
+    try { localStorage.removeItem('zt3_lic_cache'); } catch (e) { }
+  }
   licApply();
   // BUG CORRIGÉ (v7.2) : licApply() met à jour les cadenas du menu, mais
   // PAS le contenu de la page Licence. Quand la réponse du moteur arrivait
@@ -14030,6 +14041,19 @@ function licMemLoad() {
   } catch (e) { return { code: '', email: '' }; }
 }
 function licMemClear() { try { localStorage.removeItem(LIC_MEM_KEY); } catch (e) {} }
+
+/* La licence n'est active que si l'email du compte connecté == email de
+   la licence (compte unique strict). Sans compte ou email différent -> PAS
+   de licence. Empêche un autre compte de voir ta licence à vie. */
+function licEmailOk() {
+  try {
+    const mem = licMemLoad();
+    if (!mem.email) return true;               // licence locale (pas de compte requis)
+    const acct = (typeof sb !== 'undefined' && sb.user && sb.user.email) ? String(sb.user.email).toLowerCase() : '';
+    if (!acct) return false;                    // aucun compte Supabase connecté
+    return acct === mem.email.toLowerCase();
+  } catch (e) { return false; }
+}
 
 async function licActivateCall(action, code, email, machine_id) {
   try {
@@ -14212,6 +14236,7 @@ function licReasonText(r) {
     signature: en ? 'Invalid key (wrong or altered).' : 'Clé invalide (falsifiée ou incorrecte).',
     expiree: en ? 'This licence has expired.' : 'Cette licence est expirée.',
     machine: en ? 'This key was issued for another device (different software ID).' : 'Cette clé a été émise pour un autre appareil (identifiant logiciel différent).',
+    compte: en ? 'This licence belongs to another account. Sign in with the e-mail used at purchase to unlock it.' : 'Cette licence appartient à un autre compte. Connectez-vous avec l\u2019e-mail utilisé à l\u2019achat pour la débloquer.',
     format: en ? 'Unrecognised key format.' : 'Format de clé non reconnu.',
     tronquee: en ? 'Incomplete key — copy it entirely.' : 'Clé incomplète — recopiez-la en entier.',
     illisible: en ? 'Unreadable key.' : 'Clé illisible.',

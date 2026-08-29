@@ -1956,7 +1956,7 @@ def _ssl_ctx():
 # Délai par défaut ramené de 15 s à 6 s. Avec une vingtaine de sources
 # interrogées, un timeout de 15 s pouvait bloquer une réponse pendant
 # plusieurs minutes (mesuré : 24 s avec seulement 7 sources lentes).
-_MKT_TIMEOUT = 6
+_MKT_TIMEOUT = 4
 
 
 def _mkt_get(url, timeout=None):
@@ -10089,6 +10089,31 @@ def serve_html():
         return _HTML_CACHE["data"], 200, {"Content-Type": "text/html; charset=utf-8"}
     except Exception as e:
         return f"<h3>Fichier introuvable : {e}</h3>", 404
+
+
+# ── Assets statiques (logos, favicon) à côté de l'app ────────────────────────
+# Le HTML référence logo-1024.png / favicon-48.png en URL relative ; on les sert
+# depuis le dossier du moteur (présents dans le .app et le binaire).
+_ASSET_DIR = os.path.dirname(os.path.abspath(__file__))
+_MIME = {".png": "image/png", ".ico": "image/x-icon", ".svg": "image/svg+xml", ".jpg": "image/jpeg"}
+
+
+@app.get("/<path:name>")
+def serve_asset(name):
+    # Ne pas intercepter les chemins d'API.
+    if name.startswith("api/") or name.startswith("_"):
+        return "", 404
+    # Sécurise : pas de remontée de répertoire.
+    if ".." in name or "/" in name:
+        return "", 404
+    p = os.path.join(_ASSET_DIR, name)
+    if os.path.isfile(p):
+        ext = os.path.splitext(name)[1].lower()
+        with open(p, "rb") as fh:
+            data = fh.read()
+        return data, 200, {"Content-Type": _MIME.get(ext, "application/octet-stream"),
+                           "Cache-Control": "no-store"}
+    return "", 404
 
 
 def main():
