@@ -72,7 +72,7 @@ python3 -m venv .venv-build
 # shellcheck disable=SC1091
 source .venv-build/bin/activate
 python -m pip install --upgrade pip wheel >/dev/null
-python -m pip install "pyinstaller>=6.0" flask flask-cors certifi >/dev/null
+python -m pip install "pyinstaller>=6.0" flask flask-cors certifi waitress >/dev/null
 
 python -m PyInstaller --clean --noconfirm \
   --name OmniTradeBridge --noupx \
@@ -84,6 +84,7 @@ python -m PyInstaller --clean --noconfirm \
   --hidden-import certifi --collect-data certifi \
   --hidden-import concurrent.futures --hidden-import concurrent.futures.thread \
   --hidden-import ssl --hidden-import _ssl \
+  --hidden-import waitress \
   --exclude-module tkinter --exclude-module numpy --exclude-module pandas \
   --exclude-module matplotlib --exclude-module PIL --exclude-module pytest \
   --add-data "$APP:." \

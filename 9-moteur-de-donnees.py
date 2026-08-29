@@ -10352,8 +10352,27 @@ def main():
     try:
         # use_reloader=False : indispensable en gelé, le rechargeur relance
         # sys.executable et créerait une boucle de processus.
-        app.run(host=a.host, port=a.port, threaded=True,
-                debug=False, use_reloader=False)
+        # Serveur WSGI de production (waitress) si disponible : stable sous
+        # charge, contrairement au serveur de dev Flask qui peut mourir. Sinon
+        # repli sur Flask. Et on redémarre si le serveur tombe (jamais de page
+        # « pont injoignable » pour une simple erreur).
+        import importlib.util
+        has_waitress = importlib.util.find_spec("waitress") is not None
+        first = True
+        while True:
+            if has_waitress:
+                from waitress import serve
+                serve(app, host=a.host, port=a.port, threads=16)
+            else:
+                app.run(host=a.host, port=a.port, threaded=True,
+                        debug=False, use_reloader=False)
+            # Ne devrait jamais atteindre ici (serveur bloquant). Si on y arrive,
+            # on recharge l'interface brièvement puis on relance, plutôt que de
+            # laisser l'application morte.
+            if first:
+                print("\n[!] Le serveur s'est arrêté — relance automatique.", flush=True)
+                first = False
+            time.sleep(0.5)
     except KeyboardInterrupt:
         pass
     except OSError as e:
