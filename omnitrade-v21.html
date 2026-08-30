@@ -5065,7 +5065,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'9.1.5',           // ← le seul endroit à modifier
+  version:'9.1.6',           // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -7533,9 +7533,9 @@ function welcomeMaybe(){
    Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
    l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
 const WHATSNEW = [
-  { v:'9.1.5', items:[
-    {tag:'up', txt:'<b>Logo n\u0153ud vert partout</b>, y compris l\u2019ic\u00f4ne de l\u2019onglet du navigateur (favicon).'},
-    {tag:'up', txt:'<b>Rafra\u00eechissement :</b> d\u00e9marrage du moteur fiabilis\u00e9 (plus de blocage \u00e0 la relance).'},
+  { v:'9.1.6', items:[
+    {tag:'fix', txt:'<b>Le pont ne plante plus.</b> Corrig\u00e9 le blocage qui survenait apr\u00e8s une collecte lente — le moteur reste op\u00e9rationnel (briefs, alertes, dossiers, march\u00e9s).'},
+    {tag:'fix', txt:'<b>Stabilit\u00e9</b> — plus aucune erreur \u00ab cannot schedule new futures \u00bb ; le port \u201cne r\u00e9pond plus\u201d est r\u00e9solu.'},
   ]},
 ];
 const WN_SEEN_KEY='zt3_seen_wn';
