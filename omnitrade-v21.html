@@ -5065,7 +5065,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'9.1.6',           // ← le seul endroit à modifier
+  version:'9.1.7',           // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -7533,9 +7533,9 @@ function welcomeMaybe(){
    Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
    l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
 const WHATSNEW = [
-  { v:'9.1.6', items:[
-    {tag:'fix', txt:'<b>Le pont ne plante plus.</b> Corrig\u00e9 le blocage qui survenait apr\u00e8s une collecte lente — le moteur reste op\u00e9rationnel (briefs, alertes, dossiers, march\u00e9s).'},
-    {tag:'fix', txt:'<b>Stabilit\u00e9</b> — plus aucune erreur \u00ab cannot schedule new futures \u00bb ; le port \u201cne r\u00e9pond plus\u201d est r\u00e9solu.'},
+  { v:'9.1.7', items:[
+    {tag:'fix', txt:'<b>Le Market Hub ne reste plus vide</b> — l\u2019app lit d\u00e9sormais le bon flux d\u2019actualit\u00e9s (d\u00e9p\u00eaches macro du jour), l\u2019IA re\u00e7oit les chiffres et news \u00e0 synth\u00e9tiser.'},
+    {tag:'fix', txt:'<b>Li\u00e9 fl\u00e9ch\u00e9</b> — le flux \u00e9tait point\u00e9 vers une source p\u00e9rim\u00e9e ; remis sur la source fra\u00eeche et r\u00e9siliente (limite de requ\u00eates g\u00e9r\u00e9e).'},
   ]},
 ];
 const WN_SEEN_KEY='zt3_seen_wn';
