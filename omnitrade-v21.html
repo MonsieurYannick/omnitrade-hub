@@ -5065,7 +5065,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'9.1.3',           // ← le seul endroit à modifier
+  version:'9.1.4',           // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -7533,13 +7533,10 @@ function welcomeMaybe(){
    Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
    l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
 const WHATSNEW = [
-  { v:'9.1.3', items:[
-    {tag:'fix', txt:'<b>Le gel de l\u2019application est corrigé</b> — le processus ne se fige plus (pool de threads partagé, plus d\u2019accumulation). L\u2019app ne dit plus « ne répond pas ».'},
-    {tag:'fix', txt:'<b>Sécurité renforcée</b> — connexion par compte (e-mail + mot de passe) et licences liées à l\u2019e-mail d\u2019achat.'},
-    {tag:'up', txt:'<b>Notifications mobiles (ntfy)</b> — reçoivent désormais les mêmes messages que Telegram.'},
-    {tag:'up', txt:'<b>Logo officiel partout</b> — le nœud (losange + infini, vert émeraude) dans la sidebar, la fenêtre, le Dock (contenu du processus) et l\u2019application.'},
-    {tag:'up', txt:'<b>Performance</b> — l\u2019app est plus légère (horloges/battements en pause en arrière-plan).'},
-    {tag:'up', txt:'<b>Quoi de neuf</b> mis à jour à chaque version · modal de bienvenue retiré · guide PDF « Notifications ntfy » ajouté.'},
+  { v:'9.1.4', items:[
+    {tag:'fix', txt:'<b>L\u2019app se r\u00e9ouvre \u00e0 coup s\u00fbr</b> — corrig\u00e9 le blocage au d\u00e9marrage du moteur (le pont \u00ab moteur \u00bb ne se relan\u00e7ait plus en boucle). Le logo du Dock reste celui du n\u0153ud vert.'},
+    {tag:'up', txt:'<b>Logo officiel</b> — n\u0153ud vert partout : fen\u00eatre, side-bar, Dock.'},
+    {tag:'up', txt:'<b>Notifications mobiles (ntfy)</b> ajust\u00e9es · guide PDF « Notifications ntfy » dans la biblioth\u00e8que.'},
   ]},
 ];
 const WN_SEEN_KEY='zt3_seen_wn';
