@@ -203,7 +203,16 @@ for i in $(seq 1 40); do
     && break
 done
 open "http://127.0.0.1:$PORT/"
-wait $ENGINE_PID 2>/dev/null
+# Boucle de survie : si le binaire meurt (crash, mise à jour…), on le relance
+# automatiquement. L'app reste ouverte (le point du Dock ne disparaît jamais).
+while true; do
+  wait "$ENGINE_PID" 2>/dev/null
+  # Quelques ms pour laisser le port se libérer, puis relance.
+  sleep 1
+  "$BIN" --host 127.0.0.1 --port "$PORT" --token "$TOKEN" --no-keep-open \
+     >>"$LOGF" 2>&1 &
+  ENGINE_PID=$!
+done
 EOF
 chmod +x "$APPBUNDLE/Contents/MacOS/OmniTradeHub"
 
