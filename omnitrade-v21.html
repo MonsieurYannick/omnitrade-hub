@@ -2000,9 +2000,9 @@ html[data-theme="light"] .oth-orb{opacity:.15;}
 .dph{background:var(--sticky-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 .cal-hd{background:var(--sticky-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 
-/* Logo : dégradé émeraude → or, signature du template */
-.logo-gem{background:linear-gradient(135deg,var(--g),var(--gold));
-  box-shadow:0 4px 16px rgba(52,211,153,.28);}
+/* Logo : le symbole (nœud infini) se détache seul — plus de fond dégradé
+   qui le masquait. */
+.logo-gem{background:transparent;box-shadow:none;}
 
 /* ── Boutons : secondaire en verre, principal en dégradé émeraude ────── */
 .btn{background:var(--glass-bg);border-color:var(--glass-border);
@@ -7533,16 +7533,12 @@ function welcomeMaybe(){
    Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
    l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
 const WHATSNEW = [
-  { v:'9.1', items:[
-    {tag:'new', txt:'<b>Nouveau login</b> — écran de connexion modernisé (2 colonnes) avec votre nouveau logo.'},
-    {tag:'new', txt:'<b>Compte unique</b> — l\u2019inscription/connexion crée aussi votre compte de sauvegarde cloud (Supabase), et le même e-mail sert pour votre licence.'},
-    {tag:'new', txt:'<b>Slider 3D interactif</b> — aperçu des modules de l\u2019app qui suit la souris.'},
-    {tag:'new', txt:'<b>Module Prop Firm</b> — nouvelles règles réelles par firme/prog (FTMO, FundingPips, FundedNext, Audacity, The5ers), phases P1/P2/Financé, drawdown en $ et en %.'},
-    {tag:'new', txt:'<b>Alertes intelligentes</b> — prix (% / franchissement) et alertes de challenge (cible 50/80/100 %, drawdown 50/80/90 %) via mobile + Telegram.'},
-    {tag:'new', txt:'<b>Robot de veille</b> — recherche les changements de règles de vos prop firms (DuckDuckGo) et vous notifie.'},
-    {tag:'fix', txt:'<b>Notifications mobiles gratuites</b> (ntfy) — sans compte, en plus de Telegram.'},
-    {tag:'fix', txt:'<b>Activation des licences</b> — corrigée (connexion au serveur Supabase).'},
-    {tag:'fix', txt:'<b>Performance</b> — le pont est plus léger/rapide (moins de requêtes au chargement).'},
+  { v:'9.1.2', items:[
+    {tag:'fix', txt:'<b>Sécurité renforcée</b> — connexion par compte (e-mail + mot de passe) : plus de mot de passe local. Licences liées à l\u2019e-mail d\u2019achat — un autre compte ne peut pas les voir.'},
+    {tag:'fix', txt:'<b>Le pont ne disparaît plus</b> — serveur stable (waitress) et relance automatique : le moteur reste ouvert (le point du Dock ne saute plus).'},
+    {tag:'up', txt:'<b>Notifications mobiles (ntfy)</b> — déplacées dans Licence. Elles reçoivent désormais <b>les mêmes messages que Telegram</b> (briefs, alertes, dossiers).'},
+    {tag:'up', txt:'<b>Logo officiel</b> — losange + nœud infini (vert émeraude) partout · widgets corrigés (la courbe de capitaux ne s\u2019étire plus).'},
+    {tag:'up', txt:'<b>Écran de connexion</b> modernisé et plus fluide ; modale « Quoi de neuf » mise à jour à chaque version.'},
   ]},
 ];
 const WN_SEEN_KEY='zt3_seen_wn';
@@ -21431,7 +21427,7 @@ try{nowBoot();}catch(e){}
 try{groqSeed();}catch(e){}
 accEnforceStatus();
 accRenderSelector();accRenderBadge();
-updClk();setInterval(updClk,1000);
+updClk();setInterval(()=>{if(document.visibilityState==='visible')updClk();},1000);
 ntSeen=T.length; localStorage.setItem('zt3_nt_seen',String(ntSeen)); ntRefresh();
 // L'agent IA démarre sa veille Internet autonome : il ira chercher
 // l'information de lui-même, sans aucune action du trader.
@@ -21505,7 +21501,7 @@ renderProfile();
 themeApply._ready=true;      // à partir d'ici, les graphiques peuvent être redessinés
 themeApply(false);           // synchronise les boutons du sélecteur
 i18nApply();                 // traduit l'interface selon la langue mémorisée
-welcomeMaybe();              // salutation personnalisée (1 fois par session)
+// welcome retiré : le modal de bienvenue (heure/date) ne s'affiche plus.
 whatNewMaybe();              // "Quoi de neuf" à chaque nouvelle version
 
 // ── Initialisation du module Cloud (Supabase) ──────────────────────────────
@@ -23773,7 +23769,7 @@ function cbBattement(){
 }
 function cbStart(){
   if(CB.timer) return;
-  CB.on=true; CB.timer=setInterval(cbBattement,1000);
+  CB.on=true; CB.timer=setInterval(()=>{if(document.visibilityState==='visible')cbBattement();},3000);
 }
 function cbStop(){
   if(CB.timer){ clearInterval(CB.timer); CB.timer=null; }

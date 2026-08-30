@@ -7052,7 +7052,7 @@ def _tg_stooq_quotes():
     return out
 
 
-def tg_send(text, force=False):
+def tg_send(text, force=False, _no_mirror=False):
     if not force and not _tg_ready():
         return False, "telegram non configuré"
     if not _TG.get("token") or not _TG.get("chat_id"):
@@ -7086,7 +7086,29 @@ def tg_send(text, force=False):
             _TG["last_err"] = err or "envoi échoué"
             log.warning("tg send : %s", err)
     _tg_log("out", text, {"ok": ok_any, "err": (_TG.get("last_err") or "")[:160], "kind": _kind})
+    # ── Miroir vers ntfy (mobile) : tout ce que Telegram reçoit part aussi sur
+    #    le téléphone, si ntfy est configuré. Contenu mis en texte clair.
+    #    (sauf si _no_mirror=True : utilisé par notify() qui envoie déjà ntfy.)
+    try:
+        if not _no_mirror:
+            _ntfy_mirror(pretty)
+    except Exception:
+        pass
     return ok_any, (_TG["last_err"] if not ok_any else "")
+
+
+def _ntfy_mirror(text):
+    """Envoie le texte (nettoyé des balises HTML) sur ntfy si configuré."""
+    _ntfy_load()
+    if not _NTFY.get("topic"):
+        return False, "ntfy non configuré"
+    plain = re.sub(r"<[^>]+>", "", str(text or ""))
+    for a, b in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&#39;", "'")):
+        plain = plain.replace(a, b)
+    plain = plain.strip()
+    if not plain:
+        return False, "vide"
+    return ntfy_send(plain, "OmniTrade Hub", tags=None)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -7164,10 +7186,11 @@ def notify(text, title=None, tags=None):
     if _NTFY.get("topic"):
         ok, err = ntfy_send(plain, title, tags)
     # Channel Telegram (si configuré) — meilleur rendu avec le texte enrichi.
+    # On passe _no_mirror=True car ntfy est déjà envoyé juste au-dessus.
     try:
         if _tg_ready():
             t_err = ""
-            t_ok, t_err = tg_send(text, force=True)
+            t_ok, t_err = tg_send(text, force=True, _no_mirror=True)
             if t_ok:
                 ok = True
             elif not ok:

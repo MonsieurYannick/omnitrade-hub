@@ -60,7 +60,7 @@ const band = (num, title, tag) => `
   <div class="band">
     <div class="logo">OmniTrade <span>Hub</span> — Guide n°${num}</div>
     <div class="sub">${title}</div>
-    <div class="meta">Guide client · v9.0.4 · ${tag}</div>
+    <div class="meta">Guide client · v9.1.2 · ${tag}</div>
   </div>`
 
 function page(bandHtml, body) {
@@ -404,12 +404,66 @@ const G5 = page(band(5, 'Sauvegardes et synchronisation MetaTrader 5', 'cloud ·
   <div class="tip">La licence n'étant pas liée à la machine, elle reste valable après réinstallation.</div>
 `)
 
+// ═══════════════════════════ GUIDE 6 — NOTIFICATIONS MOBILES (ntfy) ═══════════════════════════
+const G6 = page(band(6, 'Notifications mobiles gratuites (ntfy)', 'installer l\u2019app · topic privé · alerte'), `
+  <h2>1. Qu\u2019est-ce que ntfy ?</h2>
+  <p><b>ntfy</b> est un service de notifications push <b>100 % gratuit</b>, <b>sans compte</b> et <b>sans
+  carte bancaire</b>. Il envoie des alertes directement sur votre téléphone, <b>même quand l\u2019application
+  est fermée</b>. C\u2019est l\u2019alternative idéale à Telegram si vous ne voulez pas créer de bot.</p>
+  <p>Avec OmniTrade Hub, ntfy vous envoie les <b>mêmes messages que Telegram</b> : briefs de séance,
+  alertes de prix, suivi Prop Firm, radar, or, calendrier… dès que le pont détecte quelque chose.</p>
+
+  <h2>2. Trouver et installer l\u2019app ntfy</h2>
+  <ol>
+    <li><b>Apple (iPhone)</b> : ouvrez l\u2019<code>App Store</code>, recherchez <b>"ntfy"</b>.
+      L\u2019app officielle a une icône <b>orange/jaune</b>. Installez-la.</li>
+    <li><b>Android</b> : ouvrez <code>Google Play</code>, recherchez <b>"ntfy"</b>. Installez-la.</li>
+    <li>Lancez l\u2019app ntfy : elle vous demande d\u2019activer les notifications système. <b>Acceptez</b>.</li>
+  </ol>
+  <div class="note">Le site officiel est <code>https://ntfy.sh</code>. Vous pouvez aussi y tester l\u2019envoi
+  sans installer l\u2019app (on verra plus bas).</div>
+
+  <h2>3. Choisir un « topic » privé</h2>
+  <p>Un <b>topic</b> est une chaîne secrète qui identifie votre canal de notifications. Elle doit être
+  <b>unique et imprévisible</b> : ne mettez jamais votre e-mail ni votre nom.</p>
+  <div class="tip">Exemple de bon topic : <code>omnitrade-x7Kp2-9zqL-Mrv5</code>.
+  Plus c\u2019est long/aléatoire, plus c\u2019est privé — personne d\u2019autre ne pourra s\u2019y abonner.</div>
+
+  <h2>4. S\u2019abonner au topic dans l\u2019app ntfy</h2>
+  <ol>
+    <li>Dans l\u2019app ntfy, en bas à gauche : icône <b>+ (ajouter)</b> ou menu <b>Abonnements</b>.</li>
+    <li>Entrez votre <b>topic</b> (ex. <code>omnitrade-x7Kp2-9zqL-Mrv5</code>).</li>
+    <li>Validez : vous êtes abonné. Les notifications arriveront ici.</li>
+  </ol>
+
+  <h2>5. Configurer OmniTrade Hub (page Licence)</h2>
+  <ol>
+    <li>Dans OmniTrade Hub, ouvrez la page <b>« Licence »</b> (ou « Support »).</li>
+    <li>Trouvez la carte <b>« 📱 Notifications mobiles (ntfy) »</b>.</li>
+    <li>Collez votre <b>topic</b> dans le champ (celui que vous avez créé à l\u2019étape 4).</li>
+    <li>Cliquez <b>« Enregistrer »</b> puis <b>« ➤ Tester »</b>.</li>
+    <li>Une notification « ... fonctionne ! » doit apparaître sur votre téléphone. ✅</li>
+  </ol>
+  <div class="warn">Le pont (la fenêtre noire) doit <b>tourner</b> et votre Mac/PC doit être allumé.
+  C\u2019est lui qui envoie les notifications vers ntfy.</div>
+
+  <h2>6. Que recevez-vous ?</h2>
+  <ul>
+    <li><b>Alertes de prix</b> (seuil, %, franchissement).</li>
+    <li><b>Suivi Prop Firm</b> : cible atteinte, drawdown proche de la limite, challenge validé.</li>
+    <li><b>Briefs de séance</b>, radar du jour, variation des biais, flash Or, calendrier…</li>
+  </ul>
+  <div class="tip">Tout ce que Telegram reçoit est <b>aussi</b> envoyé sur ntfy. Vous pouvez donc activer
+  les deux : Telegram pour discuter, ntfy pour la simplicité.</div>
+`)
+
 const files = [
   ['01-Installation-macOS-Windows.pdf', G1, 'Guide 1 — Installation (Mac & Windows)'],
   ['02-IA-Groq-OpenRouter.pdf', G2, 'Guide 2 — Intelligence artificielle'],
   ['03-Telegram-Bot.pdf', G3, 'Guide 3 — Alertes Telegram'],
   ['04-Licence-Activation.pdf', G4, 'Guide 4 — Licence & activation'],
   ['05-Sauvegarde-MT5.pdf', G5, 'Guide 5 — Sauvegardes & MT5'],
+  ['06-Notifications-ntfy.pdf', G6, 'Guide 6 — Notifications mobiles (ntfy)'],
 ]
 
 for (const [name, html, label] of files) {
