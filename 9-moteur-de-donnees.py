@@ -1168,7 +1168,20 @@ def cached_payload(days=None, with_mae=None, ttl=_CACHE_TTL):
 # ═════════════════════════════════════════════════════════════════════════════
 #  API HTTP (Flask)
 # ═════════════════════════════════════════════════════════════════════════════
-app = Flask(__name__)
+# instance_path ABSOLU : en binaire PyInstaller, `Flask(__name__)` appelle
+# `auto_find_instance_path()` -> `find_package()`, qui échoue avec
+# `__main__.__spec__ is None` + FileNotFoundError selon le cwd (le lanceur
+# « cd Resources » puis exécute). Résultat : le crash sporadique « Failed to
+# execute script ». On fige un dossier instance/ valide, indépendant du cwd.
+try:
+    _user_dir = os.environ.get("ZT_USER_DIR") or os.path.expanduser(
+        "~/Library/Application Support/OmniTrade Hub")
+    os.makedirs(_user_dir, exist_ok=True)
+    app = Flask(__name__, instance_path=os.path.join(_user_dir, "instance"),
+                instance_relative_config=True)
+    os.makedirs(app.instance_path, exist_ok=True)
+except Exception:
+    app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}},
      allow_headers=["Content-Type", "X-ZT-Token", "Authorization"])
 
