@@ -1974,6 +1974,17 @@ def _mkt_get(url, timeout=None):
         return r.read().decode("utf-8", "replace")
 
 
+# Executor GLOBAL partagé : évite de créer un nouveau ThreadPoolExecutor à
+# chaque collecte (ce qui, sans shutdown, accumulait des threads et finissait
+# par geler le processus / « l'application ne répond pas »). Un seul pool de
+# threads daemon, réutilisé par toutes les collectes market/news/calendar.
+try:
+    from concurrent.futures import ThreadPoolExecutor as _TPE, as_completed
+    _MKT_POOL = _TPE(max_workers=12, thread_name_prefix="mkt")
+except Exception:
+    _MKT_POOL = None
+
+
 def _mkt_parallel(taches, timeout=None):
     """Exécute plusieurs collectes EN PARALLÈLE, sans jamais lever.
 
@@ -1991,7 +2002,7 @@ def _mkt_parallel(taches, timeout=None):
     if not taches:
         return out
     try:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        pass  # gestion via _MKT_POOL global (défini plus haut)
     except Exception:                       # environnement très restreint
         for f in taches:
             try:
@@ -2006,9 +2017,17 @@ def _mkt_parallel(taches, timeout=None):
     # de TOUS les threads — y compris une source bloquée. Mesuré : 30 s de
     # réponse pour une seule source muette, malgré un budget de 3 s.
     # On rend la main dès le délai écoulé et on laisse les threads restants
-    # se terminer seuls, en arrière-plan (ils sont « daemon » par défaut et
-    # leur propre timeout réseau finit toujours par les interrompre).
-    ex = ThreadPoolExecutor(max_workers=min(12, len(taches)))
+    # se terminer seuls.
+    if _MKT_POOL is None:
+        for f in taches:
+            try:
+                r = f()
+                if r:
+                    out.extend(r)
+            except Exception:
+                pass
+        return out
+    ex = _MKT_POOL
     futs = [ex.submit(f) for f in taches]
     try:
         for fu in as_completed(futs, timeout=timeout):
@@ -3509,7 +3528,7 @@ def _gold_parallele(nommees, timeout=14):
     if not nommees:
         return out
     try:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        pass  # gestion via _MKT_POOL global (défini plus haut)
     except Exception:
         for k, f in nommees.items():
             try:
@@ -3517,7 +3536,14 @@ def _gold_parallele(nommees, timeout=14):
             except Exception:
                 pass
         return out
-    ex = ThreadPoolExecutor(max_workers=min(10, len(nommees)))
+    if _MKT_POOL is None:
+        for k, f in nommees.items():
+            try:
+                out[k] = f()
+            except Exception:
+                pass
+        return out
+    ex = _MKT_POOL
     futs = {}
     for k, f in nommees.items():
         try:
