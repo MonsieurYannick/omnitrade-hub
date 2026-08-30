@@ -1777,11 +1777,6 @@ def _watch_save(pairs):
         pass
 
 
-@app.get("/api/watch")
-def api_watch_get():
-    return jsonify({"ok": True, "pairs": _watch_load()})
-
-
 @app.post("/api/watch")
 def api_watch_post():
     j = request.get_json(silent=True) or {}
