@@ -109,14 +109,15 @@ jobs:
           if (-not (Test-Path $int)) { $int = "dist\OmniTradeBridge" }
           Copy-Item $env:APP "$int\omnitrade-v21.html" -Force
 
-      - name: Assemblage du paquet
+      - name: Assemblage du paquet (2 variantes)
         shell: pwsh
         env:
           APP: ${{ steps.html.outputs.APP }}
         run: |
+          # ── Variante A : EXE AUTONOME (binaire PyInstaller, aucun Python requis) ──
           New-Item -ItemType Directory -Force "OmniTradeHub-Windows-PRET" | Out-Null
           Copy-Item -Recurse "dist\OmniTradeBridge" "OmniTradeHub-Windows-PRET\bin"
-          foreach ($f in @($env:APP, "9-moteur-de-donnees.py", "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat", "cb_intel_backend.py", "cb_intel_prompt.md")) {
+          foreach ($f in @($env:APP, "9-licence.py", "public_key.txt", "2-OmniTradeExport.mq5", "0-LISEZ-MOI.txt", "1-START-WINDOWS.bat", "cb_intel_backend.py", "cb_intel_prompt.md")) {
             if (Test-Path $f) { Copy-Item $f "OmniTradeHub-Windows-PRET\" -Force }
           }
           if (Test-Path "OmniTradeHub.ico") { Copy-Item "OmniTradeHub.ico" "OmniTradeHub-Windows-PRET\" -Force }
@@ -124,6 +125,13 @@ jobs:
             Get-ChildItem "OmniTradeHub-Windows-PRET" -Recurse -Filter $_ -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
           }
           Remove-Item -Recurse -Force "OmniTradeHub-Windows-PRET\oth_admin" -ErrorAction SilentlyContinue
+          Copy-Item -Recurse "OmniTradeHub-Windows-PRET" "OmniTradeHub-Windows-PRET-Autonome"
+          # ── Variante B : EXE qui utilise PYTHON (pas de binaire, moteur .py) ──
+          Remove-Item -Recurse -Force "OmniTradeHub-Windows-PRET\bin" -ErrorAction SilentlyContinue
+          if (-not (Test-Path "OmniTradeHub-Windows-PRET\9-moteur-de-donnees.py")) {
+            Copy-Item "9-moteur-de-donnees.py" "OmniTradeHub-Windows-PRET\9-moteur-de-donnees.py" -Force
+          }
+          Copy-Item -Recurse "OmniTradeHub-Windows-PRET" "OmniTradeHub-Windows-PRET-Python"
 
       - name: Installation Inno Setup
         shell: pwsh
@@ -142,9 +150,11 @@ jobs:
                  elseif ("$env:VER" -ne "") { "$env:VER" }
                  elseif ($htmlName -match 'v([0-9]+)') { $matches[1] }
                  else { "1" }
+          # ── EXE autonome ──
           $iss = @(
             '[Setup]',
-            'AppName=OmniTrade Hub',
+            'AppId={{7F1A3E8D-OMNIAT1}}',
+            'AppName=OmniTrade Hub (autonome)',
             "AppVersion=$ver",
             'AppPublisher=OmniTrade',
             'DefaultDirName={autopf}\OmniTradeHub',
@@ -162,7 +172,7 @@ jobs:
             '[Tasks]',
             'Name: desktopicon; Description: Créer un raccourci sur le Bureau; GroupDescription: Raccourcis:',
             '[Files]',
-            'Source: "OmniTradeHub-Windows-PRET\*"; DestDir: {app}; Flags: recursesubdirs ignoreversion; Permissions: users-modify',
+            'Source: "OmniTradeHub-Windows-PRET-Autonome\*"; DestDir: {app}; Flags: recursesubdirs ignoreversion; Permissions: users-modify',
             '[Icons]',
             'Name: "{group}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"',
             'Name: "{autodesktop}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"; Tasks: desktopicon',
@@ -171,15 +181,50 @@ jobs:
           )
           Set-Content -Path "OmniTradeHub-installateur.iss" -Value $iss -Encoding UTF8
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "OmniTradeHub-installateur.iss"
-          if ($LASTEXITCODE -ne 0) { throw "Échec Inno Setup" }
-          $exe = "OmniTradeHub-Setup-$ver.exe"
-          if (-not (Test-Path $exe)) { throw "Installeur absent" }
-          "SETUP_EXE=$exe" | Out-File $env:GITHUB_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw "Échec Inno Setup (autonome)" }
+          $exeA = "OmniTradeHub-Setup-$ver.exe"
+          if (-not (Test-Path $exeA)) { throw "Installeur autonome absent" }
+          Rename-Item $exeA "OmniTradeHub-Setup-$ver-Autonome.exe"
+          # ── EXE qui utilise Python ──
+          $issP = @(
+            '[Setup]',
+            'AppId={{7F1A3E8D-OMNIAT2}}',
+            'AppName=OmniTrade Hub (nécessite Python)',
+            "AppVersion=$ver",
+            'AppPublisher=OmniTrade',
+            'DefaultDirName={autopf}\OmniTradeHub-Python',
+            'DefaultGroupName=OmniTrade Hub (Python)',
+            'SetupIconFile=OmniTradeHub.ico',
+            'DisableProgramGroupPage=yes',
+            'OutputDir=.',
+            "OutputBaseFilename=OmniTradeHub-Setup-$ver-Python",
+            'Compression=lzma2',
+            'SolidCompression=yes',
+            'PrivilegesRequired=lowest',
+            'ArchitecturesAllowed=x64compatible',
+            'ArchitecturesInstallIn64BitMode=x64compatible',
+            '[Tasks]',
+            'Name: desktopicon; Description: Créer un raccourci sur le Bureau; GroupDescription: Raccourcis:',
+            '[Files]',
+            'Source: "OmniTradeHub-Windows-PRET-Python\*"; DestDir: {app}; Flags: recursesubdirs ignoreversion; Permissions: users-modify',
+            '[Icons]',
+            'Name: "{group}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"',
+            'Name: "{autodesktop}\OmniTrade Hub"; Filename: "{app}\1-START-WINDOWS.bat"; Tasks: desktopicon',
+            '[Run]',
+            'Filename: "{app}\1-START-WINDOWS.bat"; Description: Lancer OmniTrade Hub (Python); Flags: nowait postinstall skipifsilent'
+          )
+          Set-Content -Path "OmniTradeHub-installateur-python.iss" -Value $issP -Encoding UTF8
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "OmniTradeHub-installateur-python.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Échec Inno Setup (Python)" }
+          $exeB = "OmniTradeHub-Setup-$ver-Python.exe"
+          if (-not (Test-Path $exeB)) { throw "Installeur Python absent" }
+          "SETUP_EXE=$exeA" | Out-File $env:GITHUB_OUTPUT
 
       - name: Archive ZIP de secours
         shell: pwsh
         run: |
-          Compress-Archive -Path "OmniTradeHub-Windows-PRET\*" -DestinationPath "OmniTradeHub-Windows-PRET.zip" -Force
+          Compress-Archive -Path "OmniTradeHub-Windows-PRET-Autonome\*" -DestinationPath "OmniTradeHub-Windows-Autonome.zip" -Force
+          Compress-Archive -Path "OmniTradeHub-Windows-PRET-Python\*" -DestinationPath "OmniTradeHub-Windows-Python.zip" -Force
 
       - name: Artéfacts à télécharger
         uses: actions/upload-artifact@v4
@@ -187,7 +232,8 @@ jobs:
           name: installateur-windows
           path: |
             OmniTradeHub-Setup-*.exe
-            OmniTradeHub-Windows-PRET.zip
+            OmniTradeHub-Windows-Autonome.zip
+            OmniTradeHub-Windows-Python.zip
           if-no-files-found: error
 
       - name: Publication sur la Release
@@ -196,5 +242,6 @@ jobs:
         with:
           files: |
             OmniTradeHub-Setup-*.exe
-            OmniTradeHub-Windows-PRET.zip
+            OmniTradeHub-Windows-Autonome.zip
+            OmniTradeHub-Windows-Python.zip
           token: ${{ secrets.GITHUB_TOKEN }}       # la Release est créée/remplie au besoin
