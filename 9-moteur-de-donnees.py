@@ -2061,11 +2061,12 @@ def _mkt_parallel(taches, timeout=None):
                 except Exception:
                     pass
     finally:
-        # wait=False : la réponse part immédiatement.
-        try:
-            ex.shutdown(wait=False)
-        except Exception:
-            pass
+        # IMPORTANT : on ne ferme PAS _MKT_POOL (pool GLOBAL partagé) — le
+        # fermer ici (« cannot schedule new futures after shutdown ») rendait
+        # le pool inutilisable au prochain appel et faisait planter tout
+        # /api/gold/news, /api/calendar etc. Les threads sont daemon, ils se
+        # terminent seuls. On garde la réponse immédiate (wait=False).
+        pass
     return out
 
 
@@ -3572,10 +3573,7 @@ def _gold_parallele(nommees, timeout=14):
                 out[k] = None
     except Exception:
         pass                      # délai global atteint : on rend le partiel
-    try:
-        ex.shutdown(wait=False)
-    except Exception:
-        pass
+    # IMPORTANT : ne PAS fermer _MKT_POOL (pool global) — voir _mkt_parallel.
     return out
 
 
