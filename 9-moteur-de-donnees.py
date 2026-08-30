@@ -9931,11 +9931,14 @@ def api_tg_log():
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  FINANCIALJUICE — collecte automatique des articles du flux RSS officiel
-#  https://features.financialjuice.com/feed/
+#  https://www.financialjuice.com/feed.ashx   (flux FRIS, 100 items du jour)
+#  NB : l'ancien « features.financialjuice.com/feed/ » renvoyait un flux
+#  PÉRIMÉ (10 items stagnants depuis le 28/08) → 0 nouveauté → le dossier
+#  Market Hub restait vide et l'IA « ne recevait rien ».
 #  Stockage : <config>/fj_articles.json (200 derniers). Poll toutes les 5 min.
 # ═══════════════════════════════════════════════════════════════════════════
 
-FJ_FEED_URL = "https://features.financialjuice.com/feed/"
+FJ_FEED_URL = "https://www.financialjuice.com/feed.ashx"
 FJ_MAX = 200
 _FJ_LOCK = threading.Lock()
 _FJ_LAST = {"t": 0.0}
@@ -9967,11 +9970,28 @@ def _fj_save(arr):
 def _fj_http(url, timeout=15):
     import urllib.request
     import ssl as _ssl
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    # UA complet de navigateur : le site limitait les UA "Mozilla/5.0" nus.
+    req = urllib.request.Request(url, headers={
+        "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/151.0.0.0 Safari/537.36"),
+        "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    })
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read()
-    except Exception:
+    except Exception as e:
+        # 429 (trop de requêtes) : on retente une fois après une courte pause.
+        if getattr(e, "code", None) == 429:
+            import time as _t
+            _t.sleep(3)
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as r2:
+                    return r2.read()
+            except Exception:
+                pass
+        # Sinon (certificat…), on retombe sur un contexte SSL non vérifié.
         ctx = _ssl._create_unverified_context()
         with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
             return r.read()
