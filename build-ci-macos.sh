@@ -223,11 +223,15 @@ codesign --force --deep --sign - "$APPBUNDLE" 2>/dev/null \
 xattr -dr com.apple.quarantine "$APPBUNDLE" 2>/dev/null || true
 
 # ── 5. Test réel du .app : moteur + HTML embarqué ────────────────────────────
+# On teste SUR UN PORT DÉDIÉ (8899), jamais le port productif 8765 : l'app
+# (ou son lanceur de survie) occupe 8765 en continu, et le tuer ferait
+# « Address already in use » quand le moteur de test tente de se lier.
 echo "→ Test réel du .app (moteur + HTML embarqué)…"
-PIDS=$(lsof -nP -iTCP:8765 -sTCP:LISTEN -t 2>/dev/null || true)
+TPORT="8899"
+PIDS=$(lsof -nP -iTCP:"$TPORT" -sTCP:LISTEN -t 2>/dev/null || true)
 [[ -n "$PIDS" ]] && kill $PIDS 2>/dev/null; sleep 1
 BIN_TEST="$APPBUNDLE/Contents/Resources/OmniTradeBridge/OmniTradeBridge"
-"$BIN_TEST" --host 127.0.0.1 --port 8765 --token ZT_TEST --no-keep-open \
+"$BIN_TEST" --host 127.0.0.1 --port "$TPORT" --token ZT_TEST --no-keep-open \
   >"/tmp/zt_apptest.log" 2>&1 &
 ENGINE_TEST=$!
 # Le premier lancement peut mettre plus de 4 s (création du device.id,
@@ -235,11 +239,11 @@ ENGINE_TEST=$!
 PONG="000"
 for i in $(seq 1 20); do
   sleep 1
-  PONG=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:8765/api/ping?token=ZT_TEST" || true)
+  PONG=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:$TPORT/api/ping?token=ZT_TEST" || true)
   [[ "$PONG" == "200" ]] && break
 done
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:8765/" || true)
-PAGE=$(curl -s -m 2 "http://127.0.0.1:8765/" || true)
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 2 "http://127.0.0.1:$TPORT/" || true)
+PAGE=$(curl -s -m 2 "http://127.0.0.1:$TPORT/" || true)
 [[ "$PONG" == "200" ]] && echo "   ✓ le moteur du .app répond ($PONG)" \
   || echo "   ⚠️  ping du moteur : $PONG"
 if [[ "$CODE" == "200" && "$PAGE" == *"licCodeActivate"* ]]; then
