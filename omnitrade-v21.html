@@ -5065,7 +5065,7 @@ const SUPPORT = {
 };
 const APP={
   name:APP_NAME,
-  version:'9.1.7',           // ← le seul endroit à modifier
+  version:'9.1.8',           // ← le seul endroit à modifier
   edition:'HUB',
   tagline:'Journal de Trading',
 };
@@ -7533,9 +7533,9 @@ function welcomeMaybe(){
    Contenu éditable : on ajoute/supprime un objet par version. S'affiche à
    l'ouverture SEULEMENT si la version vue (localStorage) diffère de APP.version. */
 const WHATSNEW = [
-  { v:'9.1.7', items:[
-    {tag:'fix', txt:'<b>Le Market Hub ne reste plus vide</b> — l\u2019app lit d\u00e9sormais le bon flux d\u2019actualit\u00e9s (d\u00e9p\u00eaches macro du jour), l\u2019IA re\u00e7oit les chiffres et news \u00e0 synth\u00e9tiser.'},
-    {tag:'fix', txt:'<b>Li\u00e9 fl\u00e9ch\u00e9</b> — le flux \u00e9tait point\u00e9 vers une source p\u00e9rim\u00e9e ; remis sur la source fra\u00eeche et r\u00e9siliente (limite de requ\u00eates g\u00e9r\u00e9e).'},
+  { v:'9.1.8', items:[
+    {tag:'fix', txt:'<b>L\u2019agent voit enfin le Market Hub</b> — il re\u00e7oit les d\u00e9p\u00eaches, les chiffres publi\u00e9s et les positionnements, au lieu de dire \u00ab le dossier est vide \u00bb.'},
+    {tag:'fix', txt:'<b>Fusion de deux chemins en conflit</b> — \u00ab /api/watch \u00bb servait une ancienne r\u00e9ponse incompl\u00e8te ; il rend maintenant tout ce que l\u2019agent attend.'},
   ]},
 ];
 const WN_SEEN_KEY='zt3_seen_wn';
