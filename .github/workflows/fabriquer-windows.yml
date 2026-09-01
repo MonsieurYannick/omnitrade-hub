@@ -146,8 +146,13 @@ jobs:
         run: |
           $htmlName = $env:APP
           $verTag = if ($env:GITHUB_REF -match '^refs/tags/v(.+)$') { $matches[1] } else { '' }
+          # Version : tag GitHub > input workflow > APP.version du HTML > nom de fichier
+          $appVersion = ''
+          $htmlContent = if (Test-Path $htmlName) { Get-Content $htmlName -Raw -Encoding UTF8 } else { '' }
+          if ($htmlContent -match "version:'([0-9.]+)'") { $appVersion = $matches[1] }
           $ver = if ($verTag) { $verTag }
                  elseif ("$env:VER" -ne "") { "$env:VER" }
+                 elseif ($appVersion -ne "") { $appVersion }
                  elseif ($htmlName -match 'v([0-9]+)') { $matches[1] }
                  else { "1" }
           # ── EXE autonome ──

@@ -9,12 +9,13 @@
 #   - macOS  : OmniTradeHub.app   (lanceur Python direct)
 #   - Windows: OmniTradeHub-Lanceur.bat   (Python direct)
 #
-#  Usage : bash build-python-definitif.sh [version]
+#  Usage : bash build-python-definitif.sh [version] [Intel|AppleSilicon]
 # ═══════════════════════════════════════════════════════════════════════════
 set -e
 cd "$(dirname "$0")"
 APP="omnitrade-v21.html"
 VERSION="$1"
+VARIANT="${2:-Intel}"
 [[ -n "$VERSION" ]] || VERSION="$(sed -nE "s/.*version:'([0-9.]+)'.*/\1/p" "$APP" | head -1)"
 VER_MAJOR="$(echo "$VERSION" | cut -d. -f1)"
 
@@ -135,15 +136,17 @@ kill $ENG 2>/dev/null; sleep 1; kill -9 $ENG 2>/dev/null || true
   && echo "   ✓ moteur PYTHON répond (200) + page PRODUCTION (200)" \
   || echo "   ⚠️ test: ping=$PONG code=$CODE (voir /tmp/zt_py_test.log)"
 
-# DMG
-echo "→ Création du .dmg (Python)…"
+# DMG (le moteur Python ne dépend pas de l'architecture : un DMG par variante
+# pour rester lisible dans la liste des téléchargements).
+echo "→ Création du .dmg (Python, $VARIANT)…"
+DMG="OmniTradeHub-macOS-$VARIANT-Python.dmg"
 STAGE="stage_py"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 cp -R "$APPBUNDLE" "$STAGE/"
 hdiutil create -volname "OmniTradeHub" -srcfolder "$STAGE" -ov -format UDZO \
-  "OmniTradeHub-macOS-Intel-Python.dmg" >/dev/null 2>&1
+  "$DMG" >/dev/null 2>&1
 rm -rf "$STAGE"
-echo "   ✓ OmniTradeHub-macOS-Intel-Python.dmg (v$VERSION)"
+echo "   ✓ $DMG (v$VERSION)"
 echo "══════════════════════════════════════════════════════════"
-echo "   ✅ PYTHON DÉFINITIF macOS : $APPBUNDLE + .dmg (v$VERSION)"
+echo "   ✅ PYTHON DÉFINITIF macOS : $APPBUNDLE + $DMG (v$VERSION)"
 echo "══════════════════════════════════════════════════════════"

@@ -58,17 +58,18 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Fabrication du .app + .dmg
+      - name: Fabrication du .app + .dmg (moteur PYTHON)
         shell: bash
-        run: bash build-ci-macos.sh
+        env:
+          VER: ${{ inputs.version }}
+        run: bash build-python-definitif.sh "$VER" "$VARIANT"
 
       - name: Artéfacts à télécharger
         uses: actions/upload-artifact@v4
         with:
-          name: installateur-macos-${{ matrix.variant }}
+          name: installateur-macos-${{ matrix.variant }}-python
           path: |
-            OmniTradeHub-macOS-${{ matrix.variant }}.dmg
-            OmniTradeHub-macOS-${{ matrix.variant }}-PRET.zip
+            OmniTradeHub-macOS-${{ matrix.variant }}-Python.dmg
           if-no-files-found: error
 
       - name: Publication sur la Release (Intel)
@@ -76,22 +77,25 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            OmniTradeHub-macOS-Intel.dmg
-            OmniTradeHub-macOS-Intel-PRET.zip
+            OmniTradeHub-macOS-Intel-Python.dmg
           name: OmniTrade Hub v${{ github.ref_name }}
           body: |
-            Nouvelle version disponible.
+            Nouvelle version disponible — **édition PYTHON** (moteur en Python direct, méthode d'origine : il faut Python installé sur votre Mac).
 
             **macOS — choisissez votre version ci-dessous ⬇️**
 
             | Votre Mac | Fichier |
             |---|---|
-            | **Intel** (processeur Intel Core / Xeon) | `OmniTradeHub-macOS-Intel.dmg` |
-            | **Apple Silicon** (puce M1 / M2 / M3 / M4) | `OmniTradeHub-macOS-AppleSilicon.dmg` |
+            | **Intel** (processeur Intel Core / Xeon) | `OmniTradeHub-macOS-Intel-Python.dmg` |
+            | **Apple Silicon** (puce M1 / M2 / M3 / M4) | `OmniTradeHub-macOS-AppleSilicon-Python.dmg` |
 
             Comment savoir ? Menu  → **À propos de ce Mac** : « **Puce** » = Apple Silicon · « **Processeur** » = Intel.
 
-            **Windows** — l'installateur `.exe` est ajouté automatiquement par le workflow « Fabriquer l'installateur Windows » sur le même tag.
+            **Windows** — deux installateurs sont ajoutés par le workflow Windows :
+            - `OmniTradeHub-Setup-<ver>-Autonome.exe` : fonctionne sans installer Python (binaire intégré).
+            - `OmniTradeHub-Setup-<ver>-Python.exe` : nécessite Python (léger, méthode d'origine).
+
+            > **Prérequis Python (édition Python)** : téléchargez depuis https://www.python.org/downloads/ et cochez « Add python.exe to PATH » (Windows) — surtout **pas** les outils de ligne de commande Xcode (macOS).
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publication sur la Release (Apple Silicon)
@@ -99,6 +103,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            OmniTradeHub-macOS-AppleSilicon.dmg
-            OmniTradeHub-macOS-AppleSilicon-PRET.zip
+            OmniTradeHub-macOS-AppleSilicon-Python.dmg
           token: ${{ secrets.GITHUB_TOKEN }}
