@@ -125,6 +125,10 @@ xattr -dr com.apple.quarantine "$APPBUNDLE" 2>/dev/null || true
 TPORT="8887"
 PIDS=$(lsof -nP -iTCP:"$TPORT" -sTCP:LISTEN -t 2>/dev/null || true); [[ -n "$PIDS" ]] && kill $PIDS 2>/dev/null; sleep 1
 PYF="$(command -v python3 || echo /usr/bin/python3)"
+# Sur la CI (runner vierge) il faut Flask pour que le moteur démarre.
+if ! "$PYF" -c 'import flask, flask_cors, waitress' 2>/dev/null; then
+  "$PYF" -m pip install --quiet flask flask-cors waitress 2>/dev/null || true
+fi
 "$PYF" "$RES/9-moteur-de-donnees.py" --host 127.0.0.1 --port "$TPORT" --token ZT_PY_TEST --no-keep-open >/tmp/zt_py_test.log 2>&1 &
 ENG=$!
 PONG="000"
